@@ -37,6 +37,7 @@ input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--
 .cxb button{padding:4px 10px;border-radius:14px;border:1.5px solid var(--brand);background:transparent;color:var(--brand);font:700 13px/1.2 Archivo,sans-serif}
 #fat{padding:8px 12px;border-radius:10px;border:2px solid var(--brand);background:transparent;color:var(--brand);font:800 13px Archivo,sans-serif}
 #fat.on{background:var(--brand);color:var(--on)}
+#fat.alt{border-color:#b26a00;color:#b26a00;background:rgba(178,106,0,.12)}
 .q{display:flex;align-items:center;gap:4px}
 .q button{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--brand);background:transparent;color:var(--brand);font:800 20px/1 Archivo,sans-serif}
 .q input{width:46px;text-align:center;padding:8px 2px;font-weight:800}
@@ -1294,7 +1295,7 @@ function limparTudo(){
 }
 let confirma=false;
 function marcaFechado(){if(stPed!=="faturar"){stPed="fechado";fechEm=Date.now()}salvar();pintaFat()}
-function pintaFat(){const b=$("fat");if(!b)return;$("edbar").hidden=!curId;const ok=!!curId&&(stPed==="fechado"||stPed==="alterado"||stPed==="faturar");b.hidden=!ok;if(!ok)return;const f=stPed==="faturar";b.className=f?"on":"";b.textContent=f?"✓ Pronto para faturar · Reabrir":"Pronto para faturar"}
+function pintaFat(){const b=$("fat");if(!b)return;$("edbar").hidden=!curId;const ok=!!curId&&(stPed==="fechado"||stPed==="alterado"||stPed==="faturar");b.hidden=!ok;if(!ok)return;const f=stPed==="faturar",al=stPed==="alterado";b.className=f?"on":al?"alt":"";b.textContent=f?"✓ Pronto para faturar · Reabrir":al?"⚠ Alterado · marcar Pronto para faturar":"Pronto para faturar"}
 $("fat").onclick=()=>{stPed=stPed==="faturar"?"alterado":"faturar";salvar();pintaFat()};
 $("clr").onclick=()=>{
   const b=$("clr");
