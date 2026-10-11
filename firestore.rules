@@ -11,7 +11,9 @@ service cloud.firestore {
     // Perfil de cada vendedor: só o supervisor cria acessos
     match /vendedores/{uid} {
       allow read: if logado() && (request.auth.uid == uid || supervisor());
-      allow create: if supervisor() && request.resource.data.papel == 'vendedor';
+      // Dono do app (conta do Wesley) pode criar o próprio perfil de supervisor
+      allow create: if (supervisor() && request.resource.data.papel == 'vendedor')
+                    || (logado() && request.auth.uid == uid && uid == 'CDcwBbB7M1aLDRmGM74p45UDnLz1');
       // O vendedor atualiza o próprio perfil (ex.: troca de senha), mas não muda papel nem ativo
       allow update: if supervisor() || (logado() && request.auth.uid == uid
                       && request.resource.data.papel == resource.data.papel
