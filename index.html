@@ -934,10 +934,10 @@ function lgModoSet(m){lgModo=m;const loc=m==="local",nova=m==="nova",mud=m==="mu
   $("lgnl").hidden=!loc;$("lgel").hidden=!ent;$("lgsl").hidden=!(ent||mud);$("lgsll").textContent=mud?"Senha atual":"Senha";
   $("lgs2l").hidden=!(nova||mud);$("lgs3l").hidden=!(nova||mud);$("lgr").hidden=!ent;$("lgc").hidden=!mud;
   $("lgb").textContent=loc?"Começar":nova||mud?"Salvar nova senha":"Entrar";
-  $("lgsub").textContent=loc?"Informe seu nome. Ele identifica os seus registros.":nova?"Primeiro acesso: crie a sua senha pessoal. A senha que o supervisor passou deixa de valer.":mud?"Digite a senha atual e a nova senha.":"Entre com o e-mail e a senha que o supervisor te passou.";
+  $("lgsub").textContent=loc?"Informe seu nome. Ele identifica os seus registros.":nova?"Primeiro acesso: crie a sua senha pessoal. A senha inicial deixa de valer.":mud?"Digite a senha atual e a nova senha.":"Entre com seu e-mail e senha.";
   $("lgs").autocomplete=mud?"current-password":"current-password";["lgs","lgs2","lgs3"].forEach(i=>$(i).value="");lgMsg("")}
 function mostraLogin(m){if(!$("lglogo").src)$("lglogo").src=LOGO;lgModoSet(m);$("lg").classList.add("on");setTimeout(()=>{try{({entrar:$("lge"),nova:$("lgs2"),mudar:$("lgs")}[m]||$("lgn")).focus()}catch(e){}},50)}
-const ERR={"auth/invalid-credential":"E-mail ou senha incorretos.","auth/wrong-password":"E-mail ou senha incorretos.","auth/user-not-found":"E-mail não cadastrado. Peça o acesso ao supervisor.","auth/requires-recent-login":"Por segurança, saia e entre de novo antes de mudar a senha.",
+const ERR={"auth/invalid-credential":"E-mail ou senha incorretos.","auth/wrong-password":"E-mail ou senha incorretos.","auth/user-not-found":"E-mail não cadastrado.","auth/requires-recent-login":"Por segurança, saia e entre de novo antes de mudar a senha.",
   "auth/invalid-email":"E-mail inválido.","auth/email-already-in-use":"Esse e-mail já tem conta.","auth/weak-password":"A senha precisa ter pelo menos 6 caracteres.",
   "auth/network-request-failed":"Sem internet. Conecte e tente de novo.","auth/too-many-requests":"Muitas tentativas. Espere alguns minutos.","auth/missing-password":"Digite a senha."};
 const erroTxt=e=>ERR[e&&e.code]||"Não foi possível concluir. Tente de novo.";
@@ -1104,9 +1104,9 @@ async function entrou(u){
   const pref=fbDb.collection("vendedores").doc(u.uid);let ps=null;try{ps=await pref.get()}catch(e){}
   const barra=t=>{perfil=null;mostraVendedor();fbAuth.signOut().catch(()=>{});setTimeout(()=>{mostraLogin("entrar");lgMsg(t)},300)};
   if(!ps){barra("Sem internet para conferir seu acesso. Conecte e tente de novo.");return}
-  if(!ps.exists){barra("Seu acesso ainda não foi liberado. Fale com o supervisor.");return}
+  if(!ps.exists){barra("Seu acesso ainda não foi liberado.");return}
   perfil={...ps.data()};if(!perfil.nome)perfil.nome=U((u.email||"").split("@")[0]);
-  if(perfil.ativo===false){barra("Seu acesso está desativado. Fale com o supervisor.");return}
+  if(perfil.ativo===false){barra("Seu acesso está desativado.");return}
   pref.set({ultimoAcesso:Date.now()},{merge:true}).catch(()=>{});
   lsS("mpv:nome",perfil.nome);mostraVendedor();
   const seguir=async()=>{nv.db=fbDb;nv.uid=u.uid;supPronto();await sincroniza();escuta()};
