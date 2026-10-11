@@ -1104,8 +1104,9 @@ async function entrou(u){
   const pref=fbDb.collection("vendedores").doc(u.uid);let ps=null;try{ps=await pref.get()}catch(e){}
   const barra=t=>{perfil=null;mostraVendedor();fbAuth.signOut().catch(()=>{});setTimeout(()=>{mostraLogin("entrar");lgMsg(t)},300)};
   if(!ps){barra("Sem internet para conferir seu acesso. Conecte e tente de novo.");return}
-  if(!ps.exists&&u.uid===DONO_UID){try{await pref.set({nome:"WESLEY FALCÃO",email:u.email||"",papel:"supervisor",ativo:true,criadoEm:Date.now()});ps=await pref.get()}catch(e){}}
-  if(!ps.exists){barra("Seu acesso ainda não foi liberado.");return}
+  var errB="";
+  if(!ps.exists&&u.uid===DONO_UID){try{await pref.set({nome:"WESLEY FALCÃO",email:u.email||"",papel:"supervisor",ativo:true,criadoEm:Date.now()});ps=await pref.get()}catch(e){errB=" ("+(e.code||e.message)+")"}}
+  if(!ps.exists){barra("Seu acesso ainda não foi liberado."+errB+" ["+u.uid+"]");return}
   perfil={...ps.data()};if(!perfil.nome)perfil.nome=U((u.email||"").split("@")[0]);
   if(perfil.ativo===false){barra("Seu acesso está desativado.");return}
   pref.set({ultimoAcesso:Date.now()},{merge:true}).catch(()=>{});
