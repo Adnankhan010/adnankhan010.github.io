@@ -35,6 +35,8 @@ input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--
 .row .n{flex:1;font-weight:600;font-size:15px}
 .cxb{display:flex;align-items:center;gap:6px;margin-top:4px;font-weight:400}
 .cxb button{padding:4px 10px;border-radius:14px;border:1.5px solid var(--brand);background:transparent;color:var(--brand);font:700 13px/1.2 Archivo,sans-serif}
+#fat{padding:8px 12px;border-radius:10px;border:2px solid var(--brand);background:transparent;color:var(--brand);font:800 13px Archivo,sans-serif}
+#fat.on{background:var(--brand);color:var(--on)}
 .q{display:flex;align-items:center;gap:4px}
 .q button{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--brand);background:transparent;color:var(--brand);font:800 20px/1 Archivo,sans-serif}
 .q input{width:46px;text-align:center;padding:8px 2px;font-weight:800}
@@ -110,7 +112,7 @@ header .vnd:empty{display:none}
 .gr button.sec{background:transparent;color:var(--brand)}
 .gr .off{color:#b3261e;font-weight:700}
 .hst{display:inline-block;font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:1px;border:1.5px solid currentColor}
-.hst.fechado{color:#1a8f4c}.hst.alterado{color:#b26a00}.hst.rascunho{color:var(--mute)}
+.hst.faturar{color:#0b7a75}.hst.fechado{color:#1a8f4c}.hst.alterado{color:#b26a00}.hst.rascunho{color:var(--mute)}
 .ov .box{background:var(--card);border-radius:14px;padding:12px;max-width:560px;margin:0 auto}
 .ov img{width:100%;display:block;border-radius:8px;border:1px solid var(--line)}
 .msg{font-size:13px;color:var(--mute);margin:8px 2px}
@@ -258,7 +260,7 @@ textarea{min-height:80px;resize:vertical}
 </div>
 <main>
   <div class="ed" id="aviso" role="alert" hidden><span id="avtx" class="warn"></span><button id="avx">OK</button></div>
-  <div class="ed" id="edbar" hidden><span>Pedido salvo no histórico. As alterações são salvas sozinhas.</span><button id="novo">Novo pedido</button></div>
+  <div class="ed" id="edbar" hidden><span>Pedido salvo no histórico. As alterações são salvas sozinhas.</span><button id="fat" hidden>Pronto para faturar</button><button id="novo">Novo pedido</button></div>
   <div class="head">
     <label class="full">Cliente<input id="cliente" autocomplete="off" autocorrect="off" spellcheck="false"></label><div id="sug" class="sug" role="listbox" aria-label="Clientes sugeridos" hidden></div>
     <label class="full">Endereço<input id="endereco" autocomplete="off"></label>
@@ -931,7 +933,10 @@ function aplicaCfg(c){
   if(c.precos&&typeof c.precos==="object"){precos=c.precos;salvaPrecos(false)}
   salvaAgRaw();
 }
-function mostraVendedor(){$("vnd").textContent=perfil&&perfil.nome?(perfil.papel==="supervisor"?"Supervisor: ":"Vendedor: ")+perfil.nome:"";$("sair").hidden=!fbAuth;$("msen").hidden=!(fbAuth&&perfil)}
+function aplicaAcesso(){const dono=lsG("mpv:dono")===DONO_UID;$("t-gondola").style.display=dono?"":"none";
+  ["t-motorista","bkp","rst","csv"].forEach(i=>{const el=$(i);if(el)el.style.display="none"});
+  if((mode==="gondola"&&!dono)||mode==="motorista"){mode="pedido";render()}}
+function mostraVendedor(){aplicaAcesso();$("vnd").textContent=perfil&&perfil.nome?(perfil.papel==="supervisor"?"Supervisor: ":"Vendedor: ")+perfil.nome:"";$("sair").hidden=!fbAuth;$("msen").hidden=!(fbAuth&&perfil)}
 function lgMsg(t,ok){const m=$("lgm");m.textContent=t||"";m.classList.toggle("ok",!!ok)}
 function lgModoSet(m){lgModo=m;const loc=m==="local",nova=m==="nova",mud=m==="mudar",ent=m==="entrar";
   $("lgnl").hidden=!loc;$("lgel").hidden=!ent;$("lgsl").hidden=!(ent||mud);$("lgsll").textContent=mud?"Senha atual":"Senha";
@@ -975,7 +980,7 @@ const addD=(iso,n)=>{const t=new Date(iso+"T12:00:00");t.setDate(t.getDate()+n);
 const semDe=iso=>{const t=new Date(iso+"T12:00:00");return addD(iso,-((t.getDay()+6)%7))};
 const hhDe=ms=>ms?new Date(ms).toTimeString().slice(0,5):"";
 const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const STN={fechado:"Fechado",alterado:"Alterado",rascunho:"Rascunho"};
+const STN={faturar:"Pronto para faturar",fechado:"Fechado",alterado:"Alterado",rascunho:"Rascunho"};
 function ehSup(){return !!(perfil&&perfil.papel==="supervisor"&&fbDb)}
 function supAbrir(){if(!ehSup())return;if(!sup.dia)sup.dia=hojeISO();$("sp").classList.add("on");supLiga();supRender()}
 function supLiga(){
@@ -988,10 +993,11 @@ function supDocs(){const ini=addD(semDe(sup.dia),-7);
       sn.docChanges().forEach(ch=>{const k=uid+"/"+ch.doc.id;if(ch.type==="removed"){delete sup.docs[k];return}
         const x={...(ch.doc.data()||{}),uid,id:ch.doc.id},a=sup.docs[k];sup.docs[k]=x;
         if(sup.pronto[uid]&&x.status==="fechado"&&(!a||a.status!=="fechado"))supAviso(x,k);
+        if(sup.pronto[uid]&&x.status==="faturar"&&(!a||a.status!=="faturar"))supAviso(x,k,"faturar");
         if(sup.pronto[uid]&&a&&x.ini&&!a.ini)supAviso(x,k,"visita")});
       sup.pronto[uid]=true;supRender();if(sup.det&&sup.docs[sup.det])supDetalhe(sup.det,true)},()=>{})})}
 function nomeV(uid){const v=sup.vend[uid]||{};return v.nome||v.email||"Vendedor"}
-function supAviso(x,k,tipo){const t=tipo==="visita"?"Visita iniciada · "+nomeV(x.uid)+" · "+x.cliente:"Pedido fechado · "+nomeV(x.uid)+" · "+x.cliente+" · "+(x.ped||0)+" un.";
+function supAviso(x,k,tipo){const t=tipo==="faturar"?"Pronto para faturar · "+nomeV(x.uid)+" · "+x.cliente+" · "+(x.ped||0)+" un.":tipo==="visita"?"Visita iniciada · "+nomeV(x.uid)+" · "+x.cliente:"Pedido fechado · "+nomeV(x.uid)+" · "+x.cliente+" · "+(x.ped||0)+" un.";
   const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(el._t);el._t=setTimeout(()=>el.hidden=true,6000);sup.novo=k;
   try{navigator.vibrate&&navigator.vibrate(150)}catch(e){}
   try{if(document.hidden&&window.Notification&&Notification.permission==="granted")new Notification("Max Pães",{body:t,icon:"icon-192.png"})}catch(e){}}
@@ -1001,7 +1007,7 @@ function supRender(){if(!$("sp").classList.contains("on"))return;supGerencia();
   $("smd").setAttribute("aria-pressed",dia);$("sms").setAttribute("aria-pressed",!dia);$("spsem").hidden=dia;
   const todos=Object.values(sup.docs).filter(x=>x.id.startsWith("p_")&&(dia?x.data===d:x.data>=s0&&x.data<=s1));
   const L=sup.filtro?todos.filter(x=>x.uid===sup.filtro):todos;
-  const fech=L.filter(x=>x.status==="fechado"||x.status==="alterado"),un=L.reduce((a,x)=>a+(x.ped||0),0),tr=L.reduce((a,x)=>a+(x.tro||0),0);
+  const fech=L.filter(x=>x.status==="fechado"||x.status==="alterado"||x.status==="faturar"),un=L.reduce((a,x)=>a+(x.ped||0),0),tr=L.reduce((a,x)=>a+(x.tro||0),0);
   const agora=Object.values(sup.docs).filter(x=>x.id.startsWith("p_")&&x.data===hj&&x.ini&&!x.fim);
   const kp=[["Visitas",L.filter(x=>x.ini).length,(n=>n+(n===1?" finalizada":" finalizadas"))(L.filter(x=>x.ini&&x.fim).length)],["Em visita agora",agora.length,agora.length?agora.map(x=>nomeV(x.uid).split(" ")[0]).join(", "):"ninguém"],
     ["Pedidos fechados",fech.length,L.filter(x=>x.status==="rascunho"&&x.ped>0).length+" em rascunho"],["Unidades pedidas",un,(n=>n+(n===1?" loja":" lojas"))(L.filter(x=>x.ped>0).length)],["Trocas",tr+" un.",un?Math.round(tr/un*100)+"% do pedido":"—"]];
@@ -1177,8 +1183,8 @@ function render(){
   ["pedido","troca","motorista","gondola","visita"].forEach(m=>$("t-"+m).setAttribute("aria-selected",mode===m));
   $("list").hidden=mot||vis;$("asscard").hidden=mot||gond||vis;$("chk").hidden=!mot;$("vis").hidden=!vis;
   $("list").innerHTML="";renderVisBar();
-  if(vis){renderVis();contar();salvar();$("edbar").hidden=!curId;apoio();gondSum();return}
-  if(mot){renderChk();contar();salvar();$("edbar").hidden=!curId;apoio();return}
+  if(vis){renderVis();contar();salvar();$("edbar").hidden=!curId;pintaFat();apoio();gondSum();return}
+  if(mot){renderChk();contar();salvar();$("edbar").hidden=!curId;pintaFat();apoio();return}
   const q=state[mode];
   ITENS.forEach(nome=>{
     const v=gond?q[nome]:(q[nome]||0);
@@ -1218,7 +1224,7 @@ function render(){
   });
   contar();
   salvar();
-  $("edbar").hidden=!curId;
+  $("edbar").hidden=!curId;pintaFat();
   renderAssin();
   apoio();
   gondSum();
@@ -1287,7 +1293,9 @@ function limparTudo(){
   CAMPOS.forEach(i=>$(i).value="");$("data").value=hojeISO();mode="pedido";render();
 }
 let confirma=false;
-function marcaFechado(){stPed="fechado";fechEm=Date.now();salvar()}
+function marcaFechado(){if(stPed!=="faturar"){stPed="fechado";fechEm=Date.now()}salvar();pintaFat()}
+function pintaFat(){const b=$("fat");if(!b)return;$("edbar").hidden=!curId;const ok=!!curId&&(stPed==="fechado"||stPed==="alterado"||stPed==="faturar");b.hidden=!ok;if(!ok)return;const f=stPed==="faturar";b.className=f?"on":"";b.textContent=f?"✓ Pronto para faturar · Reabrir":"Pronto para faturar"}
+$("fat").onclick=()=>{stPed=stPed==="faturar"?"alterado":"faturar";salvar();pintaFat()};
 $("clr").onclick=()=>{
   const b=$("clr");
   const vAberta=visita.ini&&!visita.fim;
@@ -1334,12 +1342,12 @@ function registrar(){
       const {id,ts,...resto}=e;
       if(JSON.stringify(resto)===JSON.stringify(c))return;
       const semSt=o=>{const {status,fechadoEm,alteradoEm,vendedor,...r}=o;return JSON.stringify(r)};
-      if(semSt(resto)!==semSt(c)&&(resto.status==="fechado"||resto.status==="alterado")&&c.status!=="rascunho"){stPed=c.status="alterado";c.alteradoEm=Date.now()}
+      if(semSt(resto)!==semSt(c)&&(resto.status==="fechado"||resto.status==="alterado"||resto.status==="faturar")&&c.status!=="rascunho"){stPed=c.status="alterado";c.alteradoEm=Date.now()}
       else if(resto.alteradoEm)c.alteradoEm=resto.alteradoEm;
       Object.assign(e,c);e.ts=Date.now();marcaPed(e.id);
     }
     hist.sort((a,b)=>b.ts-a.ts);
-    salvarHist();
+    salvarHist();pintaFat();
   }catch(err){}
 }
 let hLim=30;
@@ -1360,7 +1368,7 @@ function renderHist(){
     const sm=document.createElement("small");
     const dt=e.data?e.data.split("-").reverse().join("/"):"";
     const ng=Object.keys(e.gondola||{}).length;
-    if(e.status==="fechado"||e.status==="alterado"){const b=document.createElement("span");b.className="hst "+e.status;b.textContent=e.status==="fechado"?"Fechado":"Alterado";t.appendChild(b)}
+    if(e.status==="fechado"||e.status==="alterado"||e.status==="faturar"){const b=document.createElement("span");b.className="hst "+e.status;b.textContent=({fechado:"Fechado",alterado:"Alterado",faturar:"Pronto para faturar"})[e.status];t.appendChild(b)}
     sm.textContent=[dt,e.comprador?"Comprador: "+e.comprador:"","Pedido: "+n(e.pedido)+(n(e.pedido)===1?" item":" itens"),"Troca: "+n(e.troca)+(n(e.troca)===1?" item":" itens"),ng?"Gôndola: "+ng+" contados":"",e.visita&&e.visita.ini?"Visita "+e.visita.ini+(e.visita.fim?"–"+e.visita.fim:" (em andamento)"):"",e.id===curId?"aberto agora":""].filter(Boolean).join(" · ");
     const ac=document.createElement("div");ac.className="acts";
     const ed=document.createElement("button");ed.textContent="Editar";ed.onclick=()=>abrirPedido(e.id,ed);
@@ -1789,7 +1797,7 @@ carregarCli();
 carregarAg();
 carregar();
 if(curId){const e=hist.find(h=>h.id===curId);if(e)$("data").value=e.data||$("data").value;else curId=null}
-render();
+aplicaAcesso();render();
 iniciaNuvem();
 if("serviceWorker" in navigator&&location.protocol==="https:"&&!/claude\.ai|claudeusercontent/.test(location.host))navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
