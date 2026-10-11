@@ -893,7 +893,7 @@ function renderPrecos(){const C=$("prc");C.innerHTML="";
 // ===== Firebase =====
 // Cole aqui a configuração do projeto Firebase (Configurações do projeto → Seus apps → Web).
 const FIREBASE_CONFIG={apiKey:"AIzaSyARohr-gd-yUzcTM4ZrVOp345dKI0_2x_s",authDomain:"max-paes-b6f8e.firebaseapp.com",projectId:"max-paes-b6f8e",storageBucket:"max-paes-b6f8e.firebasestorage.app",messagingSenderId:"249171730062",appId:"1:249171730062:web:0a853e91ed2e0fb4bf73df"};
-const FBV="10.12.2";
+const FBV="10.12.2",DONO_UID="CDcwBbB7M1aLDRmGM74p45UDnLz1";
 const nv={db:null,uid:null,pend:new Set(),del:new Set(),cfg:false,t:null,msg:"",tomb:new Set(),tombSujo:false,tk:0};
 const lsG=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 function stNuvem(t){nv.msg=t;const e=$("nvst");if(e)e.textContent=t}
@@ -1104,6 +1104,7 @@ async function entrou(u){
   const pref=fbDb.collection("vendedores").doc(u.uid);let ps=null;try{ps=await pref.get()}catch(e){}
   const barra=t=>{perfil=null;mostraVendedor();fbAuth.signOut().catch(()=>{});setTimeout(()=>{mostraLogin("entrar");lgMsg(t)},300)};
   if(!ps){barra("Sem internet para conferir seu acesso. Conecte e tente de novo.");return}
+  if(!ps.exists&&u.uid===DONO_UID){try{await pref.set({nome:"WESLEY FALCÃO",email:u.email||"",papel:"supervisor",ativo:true,criadoEm:Date.now()});ps=await pref.get()}catch(e){}}
   if(!ps.exists){barra("Seu acesso ainda não foi liberado.");return}
   perfil={...ps.data()};if(!perfil.nome)perfil.nome=U((u.email||"").split("@")[0]);
   if(perfil.ativo===false){barra("Seu acesso está desativado.");return}
