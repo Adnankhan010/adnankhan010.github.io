@@ -275,7 +275,7 @@ textarea{min-height:80px;resize:vertical}
 </head>
 <body>
 <div id="intro" aria-hidden="true"><img src="logo-app.webp" alt=""></div>
-<script>(function(){var a=window.matchMedia&&matchMedia("(display-mode: standalone)").matches||navigator.standalone;var e=document.getElementById("intro");if(a&&e)e.remove()})();setTimeout(function(){var e=document.getElementById("intro");if(e){e.classList.add("fim");setTimeout(function(){e.remove()},300)}},500)</script>
+<script>(function(){var m=function(q){return window.matchMedia&&matchMedia("(display-mode: "+q+")").matches};var a=m("standalone")||m("fullscreen")||m("minimal-ui")||m("window-controls-overlay")||navigator.standalone||/^android-app:/.test(document.referrer);var e=document.getElementById("intro");if(a&&e)e.remove()})();setTimeout(function(){var e=document.getElementById("intro");if(e){e.classList.add("fim");setTimeout(function(){e.remove()},300)}},500)</script>
 <header><div class="hl"><h1><img id="hlogo" alt="Max Pães"></h1><div class="hi"><p id="vnd" class="vnd"></p><p id="count">Pedido · 0 itens</p></div></div><div class="hb"><button id="sbtn" hidden>Painel</button><button id="abtn">Agenda</button><button id="hbtn">Histórico</button></div></header>
 <div class="tabs" role="tablist">
   <button role="tab" id="t-pedido" aria-selected="true">Pedido</button>
