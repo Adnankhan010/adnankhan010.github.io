@@ -1210,7 +1210,7 @@ $("spav").onclick=async()=>{try{const r=await Notification.requestPermission();$
 setInterval(()=>{if($("sp").classList.contains("on"))supRender()},60000);
 function supDesliga(){if(sup.uv){sup.uv();sup.uv=null}Object.values(sup.lst).forEach(f=>f());sup.lst={};sup.docs={};sup.vend={};sup.ini="";$("sp").classList.remove("on");$("sbtn").hidden=true}
 function supPronto(){const s=ehSup();$("sbtn").hidden=!s;if(!s){$("sp").classList.remove("on");return}
-  $("spav").hidden=!(window.Notification&&Notification.permission==="default");if(perfil.papel==="supervisor")supAbrir()}
+  $("spav").hidden=!(window.Notification&&Notification.permission==="default");{let t="";try{t=localStorage.getItem("mpv:tela")||""}catch(e){}if(perfil.papel==="supervisor"||t==="sp")supAbrir()}}
 async function iniciaNuvem(){
   if(!FIREBASE_CONFIG){const n=lsG("mpv:nome");if(n){perfil={nome:n};mostraVendedor()}else mostraLogin("local");
     stNuvem("Modo sem nuvem: os dados ficam só neste celular. Faça backup com frequência.");return}
@@ -1915,6 +1915,34 @@ carregar();
 if(curId){const e=hist.find(h=>h.id===curId);if(e)$("data").value=e.data||$("data").value;else curId=null}
 aplicaAcesso();render();
 iniciaNuvem();
+/* Botão voltar do celular: fecha a tela aberta / volta uma página; na home exige duplo toque para sair */
+const OVS=[["fs","fsx"],["ov","fch"],["sg",null],["gf","gfx"],["sdt","sdx"],["rl","rlx"],["ag","agx"],["hs","hfx"],["sp","spx"]];
+function ovAberto(id){const e=$(id);return !!e&&e.classList.contains("on")}
+function telaAtual(){for(const id of ["rl","ag","hs","sp"]){if(ovAberto(id))return id}return ""}
+function voltaUm(){
+  if(ovAberto("sg")){fecharSg();return true}
+  if($("rsv")&&!$("rsv").hidden&&ovAberto("hs")){$("rsx").click();return true}
+  for(const [id,x] of OVS){
+    if(!ovAberto(id)||!x)continue;
+    if(id==="sp"&&perfil&&perfil.papel==="supervisor")return false;
+    $(x).click();return true}
+  if(mode!=="pedido"){mode="pedido";render();window.scrollTo(0,0);return true}
+  return false}
+let voltaT=0,saindo=false;
+function armaVoltar(){try{history.replaceState({mpv:0},"");history.pushState({mpv:1},"")}catch(e){}}
+window.addEventListener("popstate",()=>{
+  if(saindo)return;
+  if(voltaUm()){try{history.pushState({mpv:1},"")}catch(e){}return}
+  const t=Date.now();
+  if(t-voltaT<2000){saindo=true;if(tSalvar)salvar();history.back();return}
+  voltaT=t;try{history.pushState({mpv:1},"")}catch(e){}
+  const el=$("toast");el.textContent="Toque em voltar novamente para sair";el.hidden=false;clearTimeout(el._t);el._t=setTimeout(()=>el.hidden=true,2000)});
+armaVoltar();
+/* guarda a tela aberta para reabrir como estava */
+function guardaTela(){if(!perfil)return;try{localStorage.setItem("mpv:tela",telaAtual())}catch(e){}}
+document.addEventListener("visibilitychange",guardaTela);window.addEventListener("pagehide",guardaTela);setInterval(guardaTela,2000);
+setTimeout(()=>{let t="";try{t=localStorage.getItem("mpv:tela")||""}catch(e){}
+  if(t==="ag")$("abtn").click();else if(t==="hs")$("hbtn").click()},400);
 if("serviceWorker" in navigator&&location.protocol==="https:"&&!/claude\.ai|claudeusercontent/.test(location.host))navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
