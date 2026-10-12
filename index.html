@@ -353,7 +353,7 @@ textarea{min-height:80px;resize:vertical}
       <label>Senha inicial (mín. 6)<input id="nvs" type="text" autocomplete="off"></label>
       <button id="nvb">Criar acesso</button><p class="msg" id="nvm" style="margin:6px 0 0"></p>
       <p class="msg" style="margin:4px 0 0">Passe o e-mail e a senha inicial à pessoa. No primeiro acesso, o app pede para ela criar a senha dela. Só a conta do dono cria acessos.</p></div>
-    <div class="tl" id="sgl"></div>
+    <div class="tl" id="sgacc"></div>
   </details>
   <div class="sh" id="spl">Visitas e pedidos</div><div class="tl" id="spt2"></div>
   <div id="spsem" hidden><div class="sh">Troca por loja na semana</div><div class="tl" style="padding:4px 4px"><table class="tx" id="spts"></table></div></div>
@@ -1088,7 +1088,7 @@ function supRender(){if(!$("sp").classList.contains("on"))return;supGerencia();
     const rows=Object.entries(lj).filter(([,v])=>v.p||v.t).sort((a,b)=>(b[1].t/(b[1].p||1))-(a[1].t/(a[1].p||1)));
     $("spts").innerHTML="<tr><th>Loja</th><th class='n'>Pedido</th><th class='n'>Troca</th><th class='n'>%</th></tr>"+(rows.length?rows.map(([k,v])=>{const pc=v.p?Math.round(v.t/v.p*100):null;return "<tr class='"+(pc===null||pc>10?"alto":"")+"'><td>"+esc(k)+"</td><td class='n'>"+v.p+"</td><td class='n'>"+v.t+"</td><td class='n'>"+(pc===null?"—":pc+"%")+"</td></tr>"}).join(""):"<tr><td colspan='4' class='vazio'>Sem dados na semana.</td></tr>")}
 }
-function supGerencia(){const L=$("sgl");if(!L)return;L.innerHTML="";const me=fbAuth&&fbAuth.currentUser?fbAuth.currentUser.uid:"";const dono=me===DONO_UID;$("sgv").hidden=!dono;if(!dono)return;
+function supGerencia(){const L=$("sgacc");if(!L)return;L.innerHTML="";const me=fbAuth&&fbAuth.currentUser?fbAuth.currentUser.uid:"";const dono=me===DONO_UID;$("sgv").hidden=!dono;if(!dono)return;
   Object.keys(sup.vend).sort((a,b)=>nomeV(a).localeCompare(nomeV(b),"pt-BR")).forEach(uid=>{const v=sup.vend[uid]||{};const r=document.createElement("div");r.className="gr";
     r.innerHTML="<span class='gn'><b>"+esc(nomeV(uid))+"</b>"+(v.papel&&v.papel!=="vendedor"?" · "+rotP(v.papel).toLowerCase():"")+"<small>"+esc(v.email||"")+(v.trocarSenha?" · aguardando 1º acesso":"")+(v.ativo===false?" · <span class='off'>desativado</span>":"")+"</small></span>";
     const rs=document.createElement("button");rs.className="sec";rs.textContent="Redefinir senha";
@@ -1943,9 +1943,9 @@ function layoutSg(){
   el.style.transformOrigin="0 0";el.style.transform=rot?"translateX("+W+"px) rotate(90deg)":"none";
 }
 function ajustaPad(){pad.width=Math.round(pad.clientWidth*2);pad.height=Math.round(pad.clientHeight*2);limpaPad()}
-async function tentaTela(){try{await document.documentElement.requestFullscreen();await screen.orientation.lock("landscape")}catch(e){}}
-function saiTela(){try{screen.orientation.unlock()}catch(e){}try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}}
-function abrirSg(){$("sg").classList.add("on");layoutSg();ajustaPad();$("sgmsg").textContent=MSG;tentaTela()}
+async function tentaTela(){try{await screen.orientation.lock("landscape")}catch(e){}}
+function saiTela(){try{screen.orientation.unlock()}catch(e){}try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}pintaBarras()}
+function abrirSg(){$("sg").classList.add("on");layoutSg();ajustaPad();$("sgmsg").textContent=MSG;pintaBarras();tentaTela()}
 function fecharSg(){$("sg").classList.remove("on");saiTela()}
 window.addEventListener("resize",()=>{
   if(!$("sg").classList.contains("on"))return;
@@ -2000,13 +2000,17 @@ document.addEventListener("visibilitychange",guardaTela);window.addEventListener
 setTimeout(()=>{let t="";try{t=localStorage.getItem("mpv:tela")||""}catch(e){}
   if(t==="ag")$("abtn").click();else if(t==="hs")$("hbtn").click()},400);
 /* sem internet */
-function pintaOff(){const e=$("offb");if(e)e.hidden=navigator.onLine!==false}
+const assinando=()=>{const e=$("sg");return !!e&&e.classList.contains("on")};
+function pintaBarras(){const o=$("offb"),a=$("attb");
+  if(o)o.hidden=assinando()||navigator.onLine!==false;
+  if(a)a.hidden=assinando()||a.dataset.on!=="1"}
+function pintaOff(){pintaBarras()}
 window.addEventListener("online",()=>{pintaOff();try{agendaNuvem()}catch(e){}});
 window.addEventListener("offline",pintaOff);pintaOff();
 /* nova versão */
-const VER="33";
+const VER="34";
 let swReg=null,pediuAtt=false,recarregando=false;
-function mostraAtt(w){const e=$("attb");if(!e||e.dataset.on==="1")return;e.dataset.on="1";e.hidden=false;
+function mostraAtt(w){const e=$("attb");if(!e||e.dataset.on==="1")return;e.dataset.on="1";pintaBarras();
   $("attok").onclick=()=>{$("attok").textContent="Atualizando…";pediuAtt=true;
     const al=(swReg&&swReg.waiting)||w;if(al){try{al.postMessage({tipo:"atualizar"})}catch(err){}}
     setTimeout(()=>{if(!recarregando){recarregando=true;location.reload()}},al?1200:300)}}
