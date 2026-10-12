@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#1f4fa8">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-maskable-512.png">
 <link rel="preload" as="image" href="logo-app.webp">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap">
 <style>
@@ -942,6 +942,11 @@ const FIREBASE_CONFIG={apiKey:"AIzaSyARohr-gd-yUzcTM4ZrVOp345dKI0_2x_s",authDoma
 const FBV="10.12.2",DONO_UID="CDcwBbB7M1aLDRmGM74p45UDnLz1";
 const nv={db:null,uid:null,pend:new Set(),del:new Set(),cfg:false,t:null,msg:"",tomb:new Set(),tombSujo:false,tk:0};
 const lsG=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+function dispId(){let v=lsG("mpv:disp");if(!v){try{v=crypto.randomUUID()}catch(e){v=Date.now().toString(36)+Math.random().toString(36).slice(2)}lsS("mpv:disp",v)}return v}
+function dispNome(){const u=navigator.userAgent||"";return /iPhone|iPad|iPod/.test(u)?"iPhone/iPad":/Android/.test(u)?"Android":/Windows/.test(u)?"Windows":/Mac OS/.test(u)?"Mac":"Computador"}
+async function liberaDisp(){try{const u=fbAuth&&fbAuth.currentUser;if(!u||!fbDb||!perfil||perfil.papel==="developer")return;
+  if((perfil.disp||"")!==dispId())return;
+  await fbDb.collection("vendedores").doc(u.uid).set({disp:"",dispNome:"",dispEm:0},{merge:true})}catch(e){}}
 function stNuvem(t){nv.msg=t;const e=$("nvst");if(e)e.textContent=t}
 function cfgTs(){try{return +(localStorage.getItem("maxpaes:cfgts")||0)}catch(e){return 0}}
 function marcaCfg(){try{localStorage.setItem("maxpaes:cfgts",String(Date.now()))}catch(e){}nv.cfg=true;agendaNuvem()}
@@ -1023,7 +1028,7 @@ $("lgb").onclick=async()=>{const b=$("lgb"),nome=U($("lgn").value).trim(),em=$("
 ["lgn","lge","lgs","lgs2","lgs3"].forEach(id=>$(id).addEventListener("keydown",e=>{if(e.key==="Enter")$("lgb").click()}));
 $("lgn").addEventListener("input",e=>{const el=e.target,u=el.value.toUpperCase();if(u!==el.value)el.value=u});
 $("sair").onclick=async()=>{const b=$("sair");if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="Confirmar saída?";setTimeout(()=>{b.dataset.c="";b.textContent="Sair da conta"},3000);return}
-  if(tSalvar)salvar();await enviaNuvem();if(unsub){unsub();unsub=null}supDesliga();nv.db=null;perfil=null;mostraVendedor();$("hs").classList.remove("on");try{await fbAuth.signOut()}catch(e){}};
+  if(tSalvar)salvar();await enviaNuvem();await liberaDisp();if(unsub){unsub();unsub=null}supDesliga();nv.db=null;perfil=null;mostraVendedor();$("hs").classList.remove("on");try{await fbAuth.signOut()}catch(e){}};
 function carregaScript(src){return new Promise((ok,er)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=er;document.head.appendChild(s)})}
 const CHAVES_APP=()=>{const l=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(/^maxpaes:|^mpv:/.test(k))l.push(k)}}catch(e){}return l};
 // ===== Painel do supervisor =====
@@ -1091,11 +1096,14 @@ function supRender(){if(!$("sp").classList.contains("on"))return;supGerencia();
 }
 function supGerencia(){const L=$("sgacc");if(!L)return;L.innerHTML="";const me=fbAuth&&fbAuth.currentUser?fbAuth.currentUser.uid:"";const dono=me===DONO_UID;$("sgv").hidden=!dono;if(!dono)return;
   Object.keys(sup.vend).sort((a,b)=>nomeV(a).localeCompare(nomeV(b),"pt-BR")).forEach(uid=>{const v=sup.vend[uid]||{};const r=document.createElement("div");r.className="gr";
-    r.innerHTML="<span class='gn'><b>"+esc(nomeV(uid))+"</b>"+(v.papel&&v.papel!=="vendedor"?" · "+rotP(v.papel).toLowerCase():"")+"<small>"+esc(v.email||"")+(v.trocarSenha?" · aguardando 1º acesso":"")+(v.ativo===false?" · <span class='off'>"+(v.pendente?"pedido de acesso":"desativado")+"</span>":"")+"</small></span>";
+    r.innerHTML="<span class='gn'><b>"+esc(nomeV(uid))+"</b>"+(v.papel&&v.papel!=="vendedor"?" · "+rotP(v.papel).toLowerCase():"")+"<small>"+esc(v.email||"")+(v.trocarSenha?" · aguardando 1º acesso":"")+(v.disp?" · "+esc(v.dispNome||"aparelho")+" conectado":"")+(v.ativo===false?" · <span class='off'>"+(v.pendente?"pedido de acesso":"desativado")+"</span>":"")+"</small></span>";
     const rs=document.createElement("button");rs.className="sec";rs.textContent="Redefinir senha";
     rs.onclick=async()=>{if(!v.email)return;if(rs.dataset.c!=="1"){rs.dataset.c="1";rs.textContent="Enviar e-mail?";setTimeout(()=>{rs.dataset.c="";rs.textContent="Redefinir senha"},3000);return}
       try{await fbAuth.sendPasswordResetEmail(v.email);rs.textContent="E-mail enviado"}catch(e){rs.textContent="Falhou"}};
     r.appendChild(rs);
+    if(uid!==me&&v.disp){const lb=document.createElement("button");lb.className="sec";lb.textContent="Liberar aparelho";
+      lb.onclick=async()=>{if(lb.dataset.c!=="1"){lb.dataset.c="1";lb.textContent="Confirmar?";setTimeout(()=>{lb.dataset.c="";lb.textContent="Liberar aparelho"},3000);return}
+        try{await fbDb.collection("vendedores").doc(uid).set({disp:"",dispNome:"",dispEm:0},{merge:true});lb.textContent="Liberado"}catch(e){lb.textContent="Falhou"}};r.appendChild(lb)}
     if(uid!==me){const pf=document.createElement("select");pf.className="sec";pf.setAttribute("aria-label","Perfil");[["vendedor","Vendedor"],["promotor","Promotor"],["supervisor","Supervisor"]].forEach(([k,t])=>{const o=document.createElement("option");o.value=k;o.textContent=t;pf.appendChild(o)});pf.value=["promotor","supervisor"].includes(v.papel)?v.papel:"vendedor";
       pf.onchange=async()=>{try{await fbDb.collection("vendedores").doc(uid).set({papel:pf.value},{merge:true})}catch(e){pf.value=v.papel||"vendedor"}};r.appendChild(pf)}
     if(uid!==me){const at=document.createElement("button");at.className="sec";const rotAt=v.ativo===false?(v.pendente?"Liberar":"Reativar"):"Desativar";at.textContent=rotAt;
@@ -1300,6 +1308,11 @@ async function entrou(u){
              :"Seu acesso ainda não foi liberado."+errB+" ["+u.uid+"]");return}
   perfil={...ps.data()};if(!perfil.nome)perfil.nome=U((u.email||"").split("@")[0]);
   if(perfil.ativo===false){barra(perfil.pendente?"Pedido de acesso enviado. Aguarde a liberação e entre de novo.":"Seu acesso está desativado.");return}
+  if(perfil.papel!=="developer"){
+    const meu=dispId(),dp=perfil.disp||"";
+    if(dp&&dp!==meu){barra("Esta conta já está aberta em outro aparelho"+(perfil.dispNome?" ("+perfil.dispNome+")":"")+". Saia da conta nele ou peça para liberar.");return}
+    if(!dp){try{await pref.set({disp:meu,dispNome:dispNome(),dispEm:Date.now()},{merge:true});perfil.disp=meu}catch(e){barra("Não deu para registrar este aparelho. Tente de novo.");return}}
+  }
   pref.set({ultimoAcesso:Date.now()},{merge:true}).catch(()=>{});
   lsS("mpv:nome",perfil.nome);mostraVendedor();
   const seguir=async()=>{nv.db=fbDb;nv.uid=u.uid;supPronto();await sincroniza();escuta()};
@@ -2027,7 +2040,7 @@ function pintaOff(){pintaBarras()}
 window.addEventListener("online",()=>{pintaOff();try{agendaNuvem()}catch(e){}});
 window.addEventListener("offline",pintaOff);pintaOff();
 /* nova versão */
-const VER="39";
+const VER="40";
 let swReg=null,pediuAtt=false,recarregando=false;
 function mostraAtt(w){const e=$("attb");if(!e||e.dataset.on==="1")return;e.dataset.on="1";pintaBarras();
   $("attok").onclick=()=>{$("attok").textContent="Atualizando…";pediuAtt=true;
