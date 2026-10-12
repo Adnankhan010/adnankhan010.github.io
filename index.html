@@ -109,7 +109,16 @@ header .vnd:empty{display:none}
 .tx tr.alto td{color:#b3261e;font-weight:700}
 #toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#1a8f4c;color:#fff;padding:12px 16px;border-radius:12px;font-weight:700;z-index:60;max-width:92vw;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 #toast[hidden]{display:none}
-#sdt,#ov{z-index:30}
+#sdt,#ov,#rl{z-index:30}
+#rl .seg button,#rl #rla,#rl #rln,#rl #rlx{border:1.5px solid var(--brand);background:transparent;color:var(--brand);border-radius:9px;padding:8px 12px;font:800 14px Archivo,sans-serif}
+#rl .seg button{flex:1}
+#rl .seg button[aria-pressed="true"]{background:var(--brand);color:var(--on)}
+#rl .rk{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:8px 0}
+#rl .rk div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+#rl .rk small{display:block;font-size:11px;font-weight:800;color:var(--mute);text-transform:uppercase}
+#rl .rk b{font-size:20px}
+#rl h3{margin:14px 0 6px;font-size:15px}
+#rl .tx tr.tot td{font-weight:800;border-top:2px solid var(--line)}
 .gv{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .gv summary{font-weight:800;cursor:pointer;color:var(--brand)}
 .gvf{display:grid;gap:8px;margin:12px 0}
@@ -323,7 +332,7 @@ textarea{min-height:80px;resize:vertical}
   <div class="lgl"><button id="lgc">Cancelar</button><button id="lgr">Esqueci a senha</button></div>
 </div></div>
 <div class="ov" id="sp" role="dialog" aria-modal="true" aria-labelledby="spt"><div class="sw">
-  <div class="stop"><h2 id="spt">Painel do supervisor</h2><button id="spav" hidden>Ativar avisos</button><button id="spx">Usar como vendedor</button></div>
+  <div class="stop"><h2 id="spt">Painel do supervisor</h2><button id="spr">Relatórios</button><button id="spav" hidden>Ativar avisos</button><button id="spx">Usar como vendedor</button></div>
   <div class="ctl"><button id="spa" aria-label="Dia anterior">◀</button><span class="dl" id="spd"></span><button id="spn" aria-label="Próximo dia">▶</button><button id="sph">Hoje</button>
     <span style="flex:1"></span><button id="smd" aria-pressed="true">Dia</button><button id="sms" aria-pressed="false">Semana</button></div>
   <p class="msg" id="spm" style="margin:0 2px 10px"></p>
@@ -341,6 +350,15 @@ textarea{min-height:80px;resize:vertical}
   </details>
   <div class="sh" id="spl">Visitas e pedidos</div><div class="tl" id="spt2"></div>
   <div id="spsem" hidden><div class="sh">Troca por loja na semana</div><div class="tl" style="padding:4px 4px"><table class="tx" id="spts"></table></div></div>
+</div></div>
+<div class="ov" id="rl"><div class="box" style="max-width:760px">
+  <div class="hhead"><b>Relatórios da equipe</b><button id="rlx">Fechar</button></div>
+  <div class="seg" id="rlseg" style="display:flex;gap:6px;margin:6px 0"><button id="rld" aria-pressed="false">Dia</button><button id="rls" aria-pressed="true">Semana</button><button id="rlm2" aria-pressed="false">Mês</button></div>
+  <div style="display:flex;align-items:center;gap:8px;margin:6px 0"><button id="rla" aria-label="Período anterior">◀</button><b id="rlt" style="flex:1;text-align:center"></b><button id="rln" aria-label="Próximo período">▶</button></div>
+  <label style="display:flex;flex-direction:column;font-size:12px;color:var(--mute);gap:3px;margin:6px 0">Vendedor<select id="rlv"></select></label>
+  <div class="acts"><button id="rlg">Atualizar</button><button id="rlj">Gerar imagem</button></div>
+  <p class="msg" id="rlm" style="margin:6px 0"></p>
+  <div id="rlc"></div>
 </div></div>
 <div class="ov" id="sdt"><div class="box">
   <div class="hhead"><b id="sdtt">Detalhe</b><button id="sdx">Fechar</button></div>
@@ -956,6 +974,7 @@ $("tema").onclick=()=>{let t="auto";try{t=localStorage.getItem("mpv:tema")||"aut
 aplicaTema();
 function aplicaAcesso(){const dono=lsG("mpv:dono")===DONO_UID;$("t-gondola").style.display=dono?"":"none";
   ["t-motorista","bkp","rst","csv"].forEach(i=>{const el=$(i);if(el)el.style.display="none"});
+  const sp=!!(perfil&&(perfil.papel==="supervisor"||perfil.papel==="developer"));$("rsb").style.display=sp?"":"none";
   if((mode==="gondola"&&!dono)||mode==="motorista"){mode="pedido";render()}}
 const rotP=p=>p==="developer"?"Developer":p==="supervisor"?"Supervisor":"Vendedor";
 function mostraVendedor(){aplicaAcesso();$("vnd").textContent=perfil&&perfil.nome?rotP(perfil.papel)+": "+perfil.nome:"";$("sair").hidden=!fbAuth;$("msen").hidden=!(fbAuth&&perfil)}
@@ -1081,6 +1100,71 @@ $("nvb").onclick=async()=>{const b=$("nvb"),m=$("nvm"),nome=U($("nvn").value).tr
   catch(e){m.textContent=e&&e.code==="auth/email-already-in-use"?"Esse e-mail já tem conta.":erroTxt(e)}
   finally{b.disabled=false;b.textContent="Criar acesso"}};
 $("nvn").addEventListener("input",e=>{const el=e.target,u=el.value.toUpperCase();if(u!==el.value)el.value=u});
+
+// ===== Relatórios consolidados (supervisor) =====
+const rl={modo:"semana",dia:"",uid:"",dados:null,cache:{}};
+function rlRange(){const d=rl.dia||hojeISO();
+  if(rl.modo==="dia")return [d,d];
+  if(rl.modo==="semana"){const s0=semDe(d);return [s0,addD(s0,6)]}
+  const a=d.slice(0,7)+"-01",y=+d.slice(0,4),m=+d.slice(5,7);return [a,y+"-"+String(m).padStart(2,"0")+"-"+String(new Date(y,m,0).getDate()).padStart(2,"0")]}
+function rlRot(){const [a,b]=rlRange();return rl.modo==="dia"?dBR(a):rl.modo==="semana"?dBR(a)+" a "+dBR(b):MESES[+a.slice(5,7)-1]+" "+a.slice(0,4)}
+function rlMove(k){const [a,b]=rlRange();rl.dia=k<0?addD(a,-1):addD(b,1);rlBusca(false)}
+async function rlBusca(forca){
+  const [a,b]=rlRange(),key=a+"_"+b,m=$("rlm");$("rlt").textContent=rlRot();
+  const c=rl.cache[key];if(!forca&&c&&Date.now()-c.t<180000){rl.dados=c;rlRender();return}
+  m.textContent="Carregando…";$("rlc").innerHTML="";
+  try{const out=[];
+    await Promise.all(Object.keys(sup.vend).map(async uid=>{
+      const sn=await fbDb.collection("vendedores/"+uid+"/docs").where("data",">=",a).where("data","<=",b).get();
+      sn.docs.forEach(d=>{if(!d.id.startsWith("p_"))return;let e;try{e=normEnt(JSON.parse((d.data()||{}).j))}catch(_){return}if(!e||!e.id)return;e.uid=uid;out.push(e)})}));
+    rl.dados=rl.cache[key]={a,b,es:out,t:Date.now()};m.textContent="";rlRender()}
+  catch(e){m.textContent="Não foi possível carregar o relatório. Confira a internet e toque em Atualizar."}}
+const rlOk=e=>e.status!=="rascunho";
+function rlCalc(){const D=rl.dados;if(!D)return null;
+  const es=D.es.filter(e=>!rl.uid||e.uid===rl.uid),P={},T={};
+  const ped=es.filter(e=>rlOk(e)&&soma(e.pedido)>0),tro=es.filter(e=>rlOk(e)&&soma(e.troca)>0);
+  es.filter(rlOk).forEach(e=>ITENS.forEach(n=>{if(e.pedido[n]>0)P[n]=(P[n]||0)+e.pedido[n];if(e.troca[n]>0)T[n]=(T[n]||0)+e.troca[n]}));
+  return {es,P,T,ped,tro,vis:es.filter(e=>e.visita&&e.visita.ini),rasc:es.filter(e=>!rlOk(e)&&(soma(e.pedido)>0||soma(e.troca)>0)),un:soma(P),tr:soma(T)}}
+function rlRender(){const C=$("rlc"),R=rlCalc();$("rlt").textContent=rlRot();if(!R){C.innerHTML="";return}
+  const lojas=new Set(R.ped.map(e=>(e.cliente||"").trim())).size;
+  let h="<div class='rk'><div><small>Visitas</small><b>"+R.vis.length+"</b></div><div><small>Pedidos</small><b>"+R.ped.length+"</b></div><div><small>Unidades pedidas</small><b>"+R.un+"</b></div><div><small>Lojas atendidas</small><b>"+lojas+"</b></div><div><small>Trocas</small><b>"+R.tr+" un.</b></div><div><small>% troca</small><b>"+(R.un?Math.round(R.tr/R.un*100)+"%":"—")+"</b></div></div>";
+  if(R.rasc.length)h+="<p class='msg'>"+R.rasc.length+(R.rasc.length===1?" pedido em rascunho não entra":" pedidos em rascunho não entram")+" nos totais.</p>";
+  if(!R.es.length){C.innerHTML=h+"<p class='msg'>Nenhum registro neste período.</p>";return}
+  // por vendedor
+  if(!rl.uid){
+    const rows=Object.keys(sup.vend).sort((a,b)=>nomeV(a).localeCompare(nomeV(b),"pt-BR")).map(uid=>{const x=R.es.filter(e=>e.uid===uid);if(!x.length)return null;
+      const pe=x.filter(e=>rlOk(e)&&soma(e.pedido)>0),u=pe.reduce((a,e)=>a+soma(e.pedido),0),t=x.filter(rlOk).reduce((a,e)=>a+soma(e.troca),0);
+      return {n:nomeV(uid),v:x.filter(e=>e.visita&&e.visita.ini).length,p:pe.length,u,t}}).filter(Boolean);
+    h+="<h3>Por vendedor</h3><table class='tx'><tr><th>Vendedor</th><th class='n'>Visitas</th><th class='n'>Pedidos</th><th class='n'>Un.</th><th class='n'>Trocas</th></tr>"+rows.map(r=>"<tr><td>"+esc(r.n)+"</td><td class='n'>"+r.v+"</td><td class='n'>"+r.p+"</td><td class='n'>"+r.u+"</td><td class='n'>"+r.t+"</td></tr>").join("")+
+      "<tr class='tot'><td>Total</td><td class='n'>"+R.vis.length+"</td><td class='n'>"+R.ped.length+"</td><td class='n'>"+R.un+"</td><td class='n'>"+R.tr+"</td></tr></table>"}
+  // por dia
+  if(rl.modo!=="dia"){const dias={};R.es.filter(rlOk).forEach(e=>{const k=e.data||"";const o=dias[k]||(dias[k]={p:0,u:0,t:0});if(soma(e.pedido)>0)o.p++;o.u+=soma(e.pedido);o.t+=soma(e.troca)});
+    h+="<h3>Por dia</h3><table class='tx'><tr><th>Dia</th><th class='n'>Pedidos</th><th class='n'>Un.</th><th class='n'>Trocas</th></tr>"+Object.keys(dias).sort().map(k=>"<tr><td>"+esc(dBR(k))+"</td><td class='n'>"+dias[k].p+"</td><td class='n'>"+dias[k].u+"</td><td class='n'>"+dias[k].t+"</td></tr>").join("")+"</table>"}
+  // por produto
+  const ns=ITENS.filter(n=>R.P[n]>0||R.T[n]>0);
+  h+="<h3>Total por produto</h3>"+(ns.length?"<table class='tx'><tr><th>Produto</th><th class='n'>Pedido</th><th class='n'>Troca</th></tr>"+ns.map(n=>"<tr><td>"+esc(n)+"</td><td class='n'>"+(R.P[n]||"")+"</td><td class='n'>"+(R.T[n]||"")+"</td></tr>").join("")+"<tr class='tot'><td>Total</td><td class='n'>"+R.un+"</td><td class='n'>"+R.tr+"</td></tr></table>":"<p class='msg'>Nenhum item.</p>");
+  C.innerHTML=h}
+function rlAbrir(){if(!ehSup())return;if(!rl.dia)rl.dia=sup.dia||hojeISO();
+  const sel=$("rlv");sel.innerHTML="<option value=''>Todos os vendedores</option>"+Object.keys(sup.vend).sort((a,b)=>nomeV(a).localeCompare(nomeV(b),"pt-BR")).map(u=>"<option value='"+esc(u)+"'>"+esc(nomeV(u))+"</option>").join("");sel.value=rl.uid;
+  $("rl").classList.add("on");rlBusca(false)}
+function rlModo(m){rl.modo=m;[["dia","rld"],["semana","rls"],["mes","rlm2"]].forEach(([k,id])=>$(id).setAttribute("aria-pressed",k===m));rlBusca(false)}
+$("spr").onclick=rlAbrir;$("rlx").onclick=()=>$("rl").classList.remove("on");
+$("rld").onclick=()=>rlModo("dia");$("rls").onclick=()=>rlModo("semana");$("rlm2").onclick=()=>rlModo("mes");
+$("rla").onclick=()=>rlMove(-1);$("rln").onclick=()=>rlMove(1);$("rlg").onclick=()=>rlBusca(true);
+$("rlv").onchange=()=>{rl.uid=$("rlv").value;rlRender()};
+$("rlj").onclick=async()=>{const R=rlCalc();if(!R||!(R.ped.length||R.tro.length)){$("rlm").textContent="Nada para gerar neste período.";return}
+  const b=$("rlj");b.textContent="Gerando...";
+  try{await document.fonts.load("800 28px Archivo")}catch(e){}
+  try{const logo=await carregaImg(LOGO),nomes=[];
+    R.ped.concat(R.tro).forEach(e=>{const n=(e.cliente||"(sem nome)").trim();if(!nomes.some(x=>norm(x)===norm(n)))nomes.push(n)});
+    const rot=rlRot()+(rl.uid?" · "+nomeV(rl.uid):""),nm={dia:"DIA",semana:"SEMANA",mes:"MÊS"}[rl.modo];
+    const c1=metadeResumo(logo,"","PEDIDOS · "+nm,"PEDIDOS: TOTAL POR PRODUTO",R.P,nomes,rot);
+    const c2=metadeResumo(logo,"","TROCAS · "+nm,"TROCAS: TOTAL POR PRODUTO",R.T,nomes,rot);
+    const f=await folhaA4(c1,c2),arq="relatorio-"+rl.modo+"-"+rlRange()[0]+".jpg";
+    ultimo={blob:f.jb,nome:arq,pdf:f.pdf,nomePdf:arq.replace(/\.jpg$/,".pdf"),url:f.url,dup:true};
+    abrirPrev("Relatório pronto (A4 paisagem). Salve o PDF para imprimir.")}
+  catch(e){$("rlm").textContent="Não foi possível gerar a imagem."}
+  b.textContent="Gerar imagem"};
 function entDe(k){const x=sup.docs[k];if(!x)return null;try{return normEnt(JSON.parse(x.j))}catch(e){return null}}
 function supDetalhe(k,silencioso){const e=entDe(k),x=sup.docs[k];if(!e)return;sup.det=k;
   $("sdtt").textContent=e.cliente+" · "+dBR(e.data);
@@ -1661,7 +1745,7 @@ function desenharChk(logo){
   x.fillStyle=AZ;x.font="800 18px "+FT;x.textAlign="center";x.fillText("Conferido por",P+230,fy+28);x.fillText("Horário",(P+520+W-P-40)/2,fy+28);
   return c;
 }
-function metadeResumo(logo,d,tit,cab,o,nomes){
+function metadeResumo(logo,d,tit,cab,o,nomes,rot){
   const W=900,P=32,RH=58,tw=W-2*P,qw=150;
   const sc=document.createElement("canvas").getContext("2d");
   sc.font="800 22px "+FT;const lx=P+sc.measureText("Clientes:").width+10,mw=W-P-lx;
@@ -1679,7 +1763,7 @@ function metadeResumo(logo,d,tit,cab,o,nomes){
   const T=322+52*(linhas.length-1)+36,ns=ITENS.filter(n=>o[n]>0),nr=Math.max(ns.length,1);
   const H=T+56+nr*RH+130;
   const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,W,H);
-  cabecalho(x,W,P,logo,tit,[],dBR(d));
+  cabecalho(x,W,P,logo,tit,[],rot||dBR(d));
   x.textAlign="left";x.fillStyle=AZ;x.font="800 22px "+FT;x.fillText("Clientes:",P,322);
   linhas.forEach((t,i)=>{const y=322+52*i;x.fillStyle=TX;x.font="600 26px "+FT;x.fillText(t,lx,y-2);
     x.strokeStyle=AZ;x.lineWidth=2;x.beginPath();x.moveTo(lx,y+6);x.lineTo(W-P,y+6);x.stroke()});
