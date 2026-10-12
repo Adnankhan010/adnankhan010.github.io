@@ -349,7 +349,7 @@ textarea{min-height:80px;resize:vertical}
   <div class="sh">Vendedores</div><div class="vg" id="spv"></div>
   <details class="gv" id="sgv"><summary>Gerenciar acessos</summary>
     <div class="gvf"><b>Novo acesso</b>
-      <label>Perfil<select id="nvp"><option value="vendedor">Vendedor</option><option value="supervisor">Supervisor</option></select></label>
+      <label>Perfil<select id="nvp"><option value="vendedor">Vendedor</option><option value="promotor">Promotor</option><option value="supervisor">Supervisor</option></select></label>
       <label>Nome<input id="nvn" autocapitalize="characters"></label>
       <label>E-mail<input id="nve" type="email" inputmode="email" autocomplete="off"></label>
       <label>Senha inicial (mín. 6)<input id="nvs" type="text" autocomplete="off"></label>
@@ -984,8 +984,9 @@ aplicaTema();
 function aplicaAcesso(){const dono=lsG("mpv:dono")===DONO_UID;$("t-gondola").style.display=dono?"":"none";
   ["t-motorista","bkp","rst","csv"].forEach(i=>{const el=$(i);if(el)el.style.display="none"});
   const sp=!!(perfil&&(perfil.papel==="supervisor"||perfil.papel==="developer"));$("rsb").style.display=sp?"":"none";
-  if((mode==="gondola"&&!dono)||mode==="motorista"){mode="pedido";render()}}
-const rotP=p=>p==="developer"?"Developer":p==="supervisor"?"Supervisor":"Vendedor";
+  const vz=!!(perfil&&(perfil.papel==="promotor"||perfil.papel==="developer"));$("t-visita").style.display=vz?"":"none";
+  if((mode==="gondola"&&!dono)||mode==="motorista"||(mode==="visita"&&!vz&&perfil)){mode="pedido";render()}}
+const rotP=p=>p==="developer"?"Developer":p==="supervisor"?"Supervisor":p==="promotor"?"Promotor":"Vendedor";
 function mostraVendedor(){aplicaAcesso();$("vnd").textContent=perfil&&perfil.nome?rotP(perfil.papel)+": "+perfil.nome:"";$("sair").hidden=!fbAuth;$("msen").hidden=!(fbAuth&&perfil)}
 function lgMsg(t,ok){const m=$("lgm");m.textContent=t||"";m.classList.toggle("ok",!!ok)}
 function lgModoSet(m){lgModo=m;const loc=m==="local",nova=m==="nova",mud=m==="mudar",ent=m==="entrar";
@@ -1104,7 +1105,7 @@ $("nvb").onclick=async()=>{const b=$("nvb"),m=$("nvm"),nome=U($("nvn").value).tr
   b.disabled=true;b.textContent="Criando…";
   try{if(!appCad)appCad=firebase.initializeApp(FIREBASE_CONFIG,"cadastro");const a2=appCad.auth();try{await a2.setPersistence(firebase.auth.Auth.Persistence.NONE)}catch(_){}
     const cr=await a2.createUserWithEmailAndPassword(em,se);const uid=cr.user.uid;await a2.signOut();
-    await fbDb.collection("vendedores").doc(uid).set({nome,email:em,papel:($("nvp").value==="supervisor"?"supervisor":"vendedor"),ativo:true,trocarSenha:true,criadoEm:Date.now(),criadoPor:fbAuth.currentUser.uid});
+    await fbDb.collection("vendedores").doc(uid).set({nome,email:em,papel:(["supervisor","promotor"].includes($("nvp").value)?$("nvp").value:"vendedor"),ativo:true,trocarSenha:true,criadoEm:Date.now(),criadoPor:fbAuth.currentUser.uid});
     m.textContent="Acesso criado para "+nome+". Passe a ela: "+em+" e a senha inicial.";$("nvn").value="";$("nve").value="";$("nvs").value=""}
   catch(e){m.textContent=e&&e.code==="auth/email-already-in-use"?"Esse e-mail já tem conta.":erroTxt(e)}
   finally{b.disabled=false;b.textContent="Criar acesso"}};
