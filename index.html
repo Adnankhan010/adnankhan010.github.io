@@ -1414,8 +1414,8 @@ function limparTudo(){
 }
 let confirma=false;
 function marcaFechado(){if(stPed!=="faturar"){stPed="fechado";fechEm=Date.now()}salvar();pintaFat()}
-function pintaFat(){const b=$("fat");if(!b)return;$("edbar").hidden=!curId;const ok=!!curId&&(stPed==="fechado"||stPed==="alterado"||stPed==="faturar");b.hidden=!ok;if(!ok)return;const f=stPed==="faturar",al=stPed==="alterado";b.className=f?"on":al?"alt":"";b.textContent=f?"✓ Pronto para faturar · Reabrir":al?"⚠ Alterado · marcar Pronto para faturar":"Pronto para faturar"}
-$("fat").onclick=()=>{stPed=stPed==="faturar"?"alterado":"faturar";salvar();pintaFat()};
+function pintaFat(){const b=$("fat");if(!b)return;$("edbar").hidden=!curId;const ok=!!curId;b.hidden=!ok;if(!ok)return;const f=stPed==="faturar",al=stPed==="alterado";b.className=f?"on":al?"alt":"";b.textContent=f?"✓ Pronto para faturar · Reabrir":al?"⚠ Alterado · marcar Pronto para faturar":"Pronto para faturar"}
+$("fat").onclick=()=>{if(stPed==="faturar")stPed="alterado";else{stPed="faturar";if(!fechEm)fechEm=Date.now()}salvar();pintaFat()};
 $("clr").onclick=()=>{
   const b=$("clr");
   const vAberta=visita.ini&&!visita.fim;
@@ -1916,7 +1916,7 @@ carregarHist();
 carregarCli();
 carregarAg();
 carregar();
-if(curId){const e=hist.find(h=>h.id===curId);if(e)$("data").value=e.data||$("data").value;else curId=null}
+if(curId){const e=hist.find(h=>h.id===curId);if(e){$("data").value=e.data||$("data").value;stPed=e.status||"rascunho";fechEm=e.fechadoEm||0}else curId=null}
 aplicaAcesso();render();
 iniciaNuvem();
 /* Botão voltar do celular: fecha a tela aberta / volta uma página; na home exige duplo toque para sair */
