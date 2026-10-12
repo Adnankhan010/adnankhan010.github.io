@@ -220,6 +220,9 @@ textarea{min-height:80px;resize:vertical}
 #vis .gi{display:block}
 .gvolta{display:block;margin-top:4px;padding:3px 10px;border-radius:999px;border:1.5px solid var(--brand);background:transparent;color:var(--brand);font:700 12px Archivo,sans-serif}.gvolta[hidden]{display:none}
 #vbar{margin:10px 0 0}
+body.trv .head input,body.trv #list,body.trv #asscard,body.trv #vis,body.trv #sugx,body.trv #rep{pointer-events:none}
+body.trv #list,body.trv #asscard,body.trv #vis{opacity:.62}
+body.trv #edbar{border-color:#0b7a75}
 #offb,#attb{position:fixed;left:8px;right:8px;z-index:60;border-radius:12px;padding:11px 14px;font:700 14px Archivo,sans-serif;display:flex;gap:10px;align-items:center;justify-content:center;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 #offb{bottom:8px;background:#b26a00;color:#fff}
 #attb{bottom:8px;background:#1f4fa8;color:#fff}
@@ -284,7 +287,7 @@ textarea{min-height:80px;resize:vertical}
 </div>
 <main>
   <div class="ed" id="aviso" role="alert" hidden><span id="avtx" class="warn"></span><button id="avx">OK</button></div>
-  <div class="ed" id="edbar" hidden><span>Pedido salvo no histórico. As alterações são salvas sozinhas.</span><button id="fat" hidden>Pronto para faturar</button><button id="novo">Novo pedido</button></div>
+  <div class="ed" id="edbar" hidden><span id="edtx">Pedido salvo no histórico. As alterações são salvas sozinhas.</span><button id="fat" hidden>Pronto para faturar</button><button id="novo">Novo pedido</button></div>
   <div class="head">
     <label class="full">Cliente<input id="cliente" autocomplete="off" autocorrect="off" spellcheck="false"></label><div id="sug" class="sug" role="listbox" aria-label="Clientes sugeridos" hidden></div>
     <label class="full">Endereço<input id="endereco" autocomplete="off"></label>
@@ -433,7 +436,7 @@ textarea{min-height:80px;resize:vertical}
   <canvas id="pad"></canvas>
 </div></div>
 <script>
-let pendEntrada=null,bloqueio=false,stPed="rascunho",fechEm=0,perfil=null,fbAuth=null,fbDb=null,nomePend="",lgModo="entrar",unsub=null;
+let pendEntrada=null,bloqueio=false,stPed="rascunho",eraFat=false,fechEm=0,perfil=null,fbAuth=null,fbDb=null,nomePend="",lgModo="entrar",unsub=null;
 (function(){try{var t=localStorage.getItem("mpv:tema");if(t==="claro"||t==="escuro")document.documentElement.setAttribute("data-theme",t==="claro"?"light":"dark")}catch(e){}})();
 const ITEM_REN={"BOLACHA ÁGUA E SAL 250g":"BOLACHA ÁGUA E SAL 300g"};
 const renI=o=>{if(o&&typeof o==="object")Object.entries(ITEM_REN).forEach(([a,b])=>{if(a in o){o[b]=(o[b]||0)+o[a];delete o[a]}});return o};
@@ -954,7 +957,7 @@ function marcaPed(id){nv.pend.add(id);agendaNuvem()}
 function agendaNuvem(){if(!nv.db)return;clearTimeout(nv.t);nv.t=setTimeout(enviaNuvem,3000)}
 const colN=()=>nv.db.collection("vendedores/"+nv.uid+"/docs");
 function envia(id,e){let j=JSON.stringify(e);if(j.length>700000)j=JSON.stringify({...e,assin:{pedido:"",troca:""}});
-  const v=e.visita||{};return colN().doc("p_"+id).set({ts:e.ts,j,status:e.status||"rascunho",cliente:e.cliente||"",data:e.data||"",vendedor:perfil?perfil.nome:"",ini:v.ini||"",fim:v.fim||"",ped:soma(e.pedido),tro:soma(e.troca),fechadoEm:e.fechadoEm||0})}
+  const v=e.visita||{};return colN().doc("p_"+id).set({ts:e.ts,j,status:e.status||"rascunho",fat:!!e.fat,cliente:e.cliente||"",data:e.data||"",vendedor:perfil?perfil.nome:"",ini:v.ini||"",fim:v.fim||"",ped:soma(e.pedido),tro:soma(e.troca),fechadoEm:e.fechadoEm||0})}
 async function enviaNuvem(){
   if(!nv.db)return;
   const ps=[];
@@ -1038,6 +1041,7 @@ const semDe=iso=>{const t=new Date(iso+"T12:00:00");return addD(iso,-((t.getDay(
 const hhDe=ms=>ms?new Date(ms).toTimeString().slice(0,5):"";
 const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const STN={faturar:"Pronto para faturar",fechado:"Fechado",alterado:"Alterado",rascunho:"Rascunho"};
+const rotSt=(st,fat)=>st==="alterado"&&fat?"Alterado · Pronto para faturar":(STN[st]||"Rascunho");
 function ehSup(){return !!(perfil&&(perfil.papel==="supervisor"||perfil.papel==="developer")&&fbDb)}
 function supAbrir(){if(!ehSup())return;if(!sup.dia)sup.dia=hojeISO();$("sp").classList.add("on");supLiga();supRender()}
 function supLiga(){
@@ -1085,7 +1089,7 @@ function supRender(){if(!$("sp").classList.contains("on"))return;supGerencia();
   const ord=L.slice().sort((a,b)=>(b.data+(b.ini||hhDe(b.ts))).localeCompare(a.data+(a.ini||hhDe(a.ts))));
   if(!ord.length)T.innerHTML='<div class="vazio">Nenhuma visita ou pedido '+(dia?"neste dia":"nesta semana")+".</div>";
   ord.forEach(x=>{const r=document.createElement("button");r.className="tr"+(sup.novo===x.uid+"/"+x.id?" novo":"");
-    const hora=x.ini?(x.ini+(x.fim?"–"+x.fim:"")):hhDe(x.ts),st=(STN[x.status]||"Rascunho")+(x.ini&&!x.fim&&x.data===hj?" · em visita":"");
+    const hora=x.ini?(x.ini+(x.fim?"–"+x.fim:"")):hhDe(x.ts),st=rotSt(x.status,x.fat)+(x.ini&&!x.fim&&x.data===hj?" · em visita":"");
     r.innerHTML="<span class='tt'>"+esc(dia?(x.ini||hhDe(x.ts)):dBR(x.data).slice(0,5))+"</span><span class='tn'><b>"+esc(x.cliente||"(sem loja)")+"</b><small>"+esc(nomeV(x.uid))+" · "+esc(hora)+"</small></span>"+
       "<span class='tq'>"+(x.ped?"<b>"+x.ped+"</b> ped.":"")+(x.tro?" · "+x.tro+" troca":"")+"<br><span class='hst "+(x.status||"rascunho")+"'>"+esc(st)+"</span></span>";
     r.onclick=()=>supDetalhe(x.uid+"/"+x.id);T.appendChild(r)});
@@ -1484,13 +1488,23 @@ window.addEventListener("pagehide",salvar);
 const temItens=()=>[state.pedido,state.troca].some(o=>Object.values(o).some(v=>v>0))||Object.keys(state.gondola).length>0||!!visita.ini||temChk();
 function limparTudo(){
   if(tSalvar)salvar();
-  curId=null;state.pedido={};state.troca={};state.gondola={};visita=novaVis();assin.pedido="";assin.troca="";chk=novoChk();stPed="rascunho";fechEm=0;
+  curId=null;state.pedido={};state.troca={};state.gondola={};visita=novaVis();assin.pedido="";assin.troca="";chk=novoChk();stPed="rascunho";eraFat=false;fechEm=0;
   CAMPOS.forEach(i=>$(i).value="");$("data").value=hojeISO();mode="pedido";render();
 }
 let confirma=false;
 function marcaFechado(){if(stPed!=="faturar"){stPed="fechado";fechEm=Date.now()}salvar();pintaFat()}
-function pintaFat(){const b=$("fat");if(!b)return;$("edbar").hidden=!curId;const ok=!!curId;b.hidden=!ok;if(!ok)return;const f=stPed==="faturar",al=stPed==="alterado";b.className=f?"on":al?"alt":"";b.textContent=f?"✓ Pronto para faturar · Reabrir":al?"⚠ Alterado · marcar Pronto para faturar":"Pronto para faturar"}
-$("fat").onclick=()=>{if(stPed==="faturar")stPed="alterado";else{stPed="faturar";if(!fechEm)fechEm=Date.now()}salvar();pintaFat()};
+function pintaFat(){const b=$("fat");if(!b)return;$("edbar").hidden=!curId;const ok=!!curId;b.hidden=!ok;
+  const trv=ok&&stPed==="faturar";
+  document.body.classList.toggle("trv",trv);
+  CAMPOS.forEach(i=>{const el=$(i);if(el)el.readOnly=trv});$("data").readOnly=trv;
+  const tx=$("edtx");if(tx)tx.textContent=trv?"Pedido travado para o faturamento. Para mudar algo, toque em Reabrir.":"Pedido salvo no histórico. As alterações são salvas sozinhas.";
+  if(!ok)return;const f=stPed==="faturar",al=stPed==="alterado";b.className=f?"on":al?"alt":"";
+  b.textContent=f?"🔒 Travado · Reabrir para editar":al?(eraFat?"⚠ Alterado · Pronto para faturar · marcar de novo":"⚠ Alterado · marcar Pronto para faturar"):"Pronto para faturar"}
+$("fat").onclick=()=>{const b=$("fat");
+  if(stPed==="faturar"){if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="Reabrir para editar? Toque de novo";setTimeout(()=>{if(b.dataset.c==="1"){b.dataset.c="";pintaFat()}},3000);return}
+    b.dataset.c="";stPed="alterado";eraFat=true}
+  else{stPed="faturar";eraFat=false;if(!fechEm)fechEm=Date.now()}
+  salvar();pintaFat()};
 $("clr").onclick=()=>{
   const b=$("clr");
   const vAberta=visita.ini&&!visita.fim;
@@ -1501,7 +1515,7 @@ $("novo").onclick=()=>{const b=$("novo");if(visita.ini&&!visita.fim&&b.dataset.c
 
 const lim=o=>Object.fromEntries(Object.entries(o).filter(([,v])=>v>0));
 function conteudo(){
-  return {status:stPed,fechadoEm:fechEm,vendedor:perfil?perfil.nome:"",cliente:$("cliente").value.trim(),endereco:$("endereco").value.trim(),comprador:$("comprador").value.trim(),data:$("data").value,pedido:lim(state.pedido),troca:lim(state.troca),gondola:{...state.gondola},visita:JSON.parse(JSON.stringify(visita)),assin:{pedido:assin.pedido,troca:assin.troca},chk:JSON.parse(JSON.stringify(chk))};
+  return {status:stPed,fat:!!eraFat,fechadoEm:fechEm,vendedor:perfil?perfil.nome:"",cliente:$("cliente").value.trim(),endereco:$("endereco").value.trim(),comprador:$("comprador").value.trim(),data:$("data").value,pedido:lim(state.pedido),troca:lim(state.troca),gondola:{...state.gondola},visita:JSON.parse(JSON.stringify(visita)),assin:{pedido:assin.pedido,troca:assin.troca},chk:JSON.parse(JSON.stringify(chk))};
 }
 function salvarHist(){
   const tenta=()=>{try{localStorage.setItem(HKEY,JSON.stringify(hist));return true}catch(e){return false}};
@@ -1536,8 +1550,8 @@ function registrar(){
     }else{
       const {id,ts,...resto}=e;
       if(JSON.stringify(resto)===JSON.stringify(c))return;
-      const semSt=o=>{const {status,fechadoEm,alteradoEm,vendedor,...r}=o;return JSON.stringify(r)};
-      if(semSt(resto)!==semSt(c)&&(resto.status==="fechado"||resto.status==="alterado"||resto.status==="faturar")&&c.status!=="rascunho"){stPed=c.status="alterado";c.alteradoEm=Date.now()}
+      const semSt=o=>{const {status,fat,fechadoEm,alteradoEm,vendedor,...r}=o;return JSON.stringify(r)};
+      if(semSt(resto)!==semSt(c)&&(resto.status==="fechado"||resto.status==="alterado"||resto.status==="faturar")&&c.status!=="rascunho"){if(resto.status==="faturar"||resto.fat){eraFat=true;c.fat=true}stPed=c.status="alterado";c.alteradoEm=Date.now()}
       else if(resto.alteradoEm)c.alteradoEm=resto.alteradoEm;
       Object.assign(e,c);e.ts=Date.now();marcaPed(e.id);
     }
@@ -1563,7 +1577,7 @@ function renderHist(){
     const sm=document.createElement("small");
     const dt=e.data?e.data.split("-").reverse().join("/"):"";
     const ng=Object.keys(e.gondola||{}).length;
-    if(e.status==="fechado"||e.status==="alterado"||e.status==="faturar"){const b=document.createElement("span");b.className="hst "+e.status;b.textContent=({fechado:"Fechado",alterado:"Alterado",faturar:"Pronto para faturar"})[e.status];t.appendChild(b)}
+    if(e.status==="fechado"||e.status==="alterado"||e.status==="faturar"){const b=document.createElement("span");b.className="hst "+e.status;b.textContent=rotSt(e.status,e.fat);t.appendChild(b)}
     sm.textContent=[dt,e.comprador?"Comprador: "+e.comprador:"","Pedido: "+n(e.pedido)+(n(e.pedido)===1?" item":" itens"),"Troca: "+n(e.troca)+(n(e.troca)===1?" item":" itens"),ng?"Gôndola: "+ng+" contados":"",e.visita&&e.visita.ini?"Visita "+e.visita.ini+(e.visita.fim?"–"+e.visita.fim:" (em andamento)"):"",e.id===curId?"aberto agora":""].filter(Boolean).join(" · ");
     const ac=document.createElement("div");ac.className="acts";
     const ed=document.createElement("button");ed.textContent="Editar";ed.onclick=()=>abrirPedido(e.id,ed);
@@ -1579,7 +1593,7 @@ function abrirPedido(id,btn){
   const e=hist.find(h=>h.id===id);if(!e)return;
   state.pedido={...e.pedido};state.troca={...e.troca};state.gondola={...(e.gondola||{})};visita=normVis(e.visita);
   assin.pedido=(e.assin&&e.assin.pedido)||"";assin.troca=(e.assin&&e.assin.troca)||"";
-  chk=normChk(e.chk);stPed=e.status||"rascunho";fechEm=e.fechadoEm||0;
+  chk=normChk(e.chk);stPed=e.status||"rascunho";eraFat=!!e.fat;fechEm=e.fechadoEm||0;
   $("cliente").value=e.cliente||"";$("endereco").value=e.endereco||"";$("comprador").value=e.comprador||"";
   $("data").value=e.data||hojeISO();
   curId=id;mode="pedido";$("hs").classList.remove("on");render();window.scrollTo(0,0);
@@ -1999,7 +2013,7 @@ carregarHist();
 carregarCli();
 carregarAg();
 carregar();
-if(curId){const e=hist.find(h=>h.id===curId);if(e){$("data").value=e.data||$("data").value;stPed=e.status||"rascunho";fechEm=e.fechadoEm||0}else curId=null}
+if(curId){const e=hist.find(h=>h.id===curId);if(e){$("data").value=e.data||$("data").value;stPed=e.status||"rascunho";eraFat=!!e.fat;fechEm=e.fechadoEm||0}else curId=null}
 aplicaAcesso();render();
 iniciaNuvem();
 /* Botão voltar do celular: fecha a tela aberta / volta uma página; na home exige duplo toque para sair */
@@ -2040,7 +2054,7 @@ function pintaOff(){pintaBarras()}
 window.addEventListener("online",()=>{pintaOff();try{agendaNuvem()}catch(e){}});
 window.addEventListener("offline",pintaOff);pintaOff();
 /* nova versão */
-const VER="40";
+const VER="41";
 let swReg=null,pediuAtt=false,recarregando=false;
 function mostraAtt(w){const e=$("attb");if(!e||e.dataset.on==="1")return;e.dataset.on="1";pintaBarras();
   $("attok").onclick=()=>{$("attok").textContent="Atualizando…";pediuAtt=true;
