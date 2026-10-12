@@ -66,7 +66,7 @@ header .vnd:empty{display:none}
 #lg{z-index:50;background:var(--bg)}
 #lg .box{margin-top:6vh;padding:20px}
 #lgsub{text-align:center}
-#lg .lglogo{border:0;border-radius:14px;display:block;width:min(120px,40%);height:auto;margin:0 auto 14px;background:#fff;padding:8px 10px;box-sizing:content-box;image-rendering:auto}
+#lg .lglogo{border:0;border-radius:24px;display:block;width:112px;height:112px;object-fit:cover;margin:0 auto 14px;padding:0}
 #lg h2{text-align:center;margin:0 0 4px;font-size:22px;color:var(--brand)}
 #lg label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute);margin-top:12px}
 #lg label[hidden]{display:none}
@@ -275,7 +275,7 @@ textarea{min-height:80px;resize:vertical}
 </head>
 <body>
 <div id="intro" aria-hidden="true"><img src="logo-app.webp" alt=""></div>
-<script>setTimeout(function(){var e=document.getElementById("intro");if(e){e.classList.add("fim");setTimeout(function(){e.remove()},300)}},500)</script>
+<script>(function(){var a=window.matchMedia&&matchMedia("(display-mode: standalone)").matches||navigator.standalone;var e=document.getElementById("intro");if(a&&e)e.remove()})();setTimeout(function(){var e=document.getElementById("intro");if(e){e.classList.add("fim");setTimeout(function(){e.remove()},300)}},500)</script>
 <header><div class="hl"><h1><img id="hlogo" alt="Max Pães"></h1><div class="hi"><p id="vnd" class="vnd"></p><p id="count">Pedido · 0 itens</p></div></div><div class="hb"><button id="sbtn" hidden>Painel</button><button id="abtn">Agenda</button><button id="hbtn">Histórico</button></div></header>
 <div class="tabs" role="tablist">
   <button role="tab" id="t-pedido" aria-selected="true">Pedido</button>
@@ -995,7 +995,7 @@ function lgModoSet(m){lgModo=m;const loc=m==="local",nova=m==="nova",mud=m==="mu
   $("lgb").textContent=loc?"Começar":nova||mud?"Salvar nova senha":"Entrar";
   $("lgsub").textContent=loc?"Informe seu nome. Ele identifica os seus registros.":nova?"Primeiro acesso: crie a sua senha pessoal. A senha inicial deixa de valer.":mud?"Digite a senha atual e a nova senha.":"Entre com seu e-mail e senha.";
   $("lgs").autocomplete=mud?"current-password":"current-password";["lgs","lgs2","lgs3"].forEach(i=>$(i).value="");lgMsg("")}
-function mostraLogin(m){if(!$("lglogo").src)$("lglogo").src=LOGO;lgModoSet(m);$("lg").classList.add("on");setTimeout(()=>{try{({entrar:$("lge"),nova:$("lgs2"),mudar:$("lgs")}[m]||$("lgn")).focus()}catch(e){}},50)}
+function mostraLogin(m){if(!$("lglogo").src)$("lglogo").src="logo-app.webp";lgModoSet(m);$("lg").classList.add("on");setTimeout(()=>{try{({entrar:$("lge"),nova:$("lgs2"),mudar:$("lgs")}[m]||$("lgn")).focus()}catch(e){}},50)}
 const ERR={"auth/invalid-credential":"E-mail ou senha incorretos.","auth/wrong-password":"E-mail ou senha incorretos.","auth/user-not-found":"E-mail não cadastrado.","auth/requires-recent-login":"Por segurança, saia e entre de novo antes de mudar a senha.",
   "auth/invalid-email":"E-mail inválido.","auth/email-already-in-use":"Esse e-mail já tem conta.","auth/weak-password":"A senha precisa ter pelo menos 6 caracteres.",
   "auth/network-request-failed":"Sem internet. Conecte e tente de novo.","auth/too-many-requests":"Muitas tentativas. Espere alguns minutos.","auth/missing-password":"Digite a senha."};
