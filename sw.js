@@ -1,12 +1,14 @@
 // Max Pães · Vendedor — funciona sem internet.
 // A página principal busca primeiro na rede (para receber atualizações) e usa o cache se estiver sem sinal.
-const CACHE = "mpv-v31";
+const CACHE = "mpv-v32";
 const BASE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./logo-app.webp"];
-self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(BASE)).then(() => self.skipWaiting())); });
+self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(BASE))); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener("message", e => { if (e.data && e.data.tipo === "atualizar") self.skipWaiting(); });
 self.addEventListener("fetch", e => {
   const r = e.request, u = new URL(r.url);
   if (r.method !== "GET") return;
+  if (/versao\.txt/.test(u.pathname)) return; // checagem de versão: sempre da rede
   if (/firestore\.googleapis|identitytoolkit|securetoken|googleapis\.com\/(identity|v1)/.test(u.host + u.pathname)) return; // dados e login: sempre direto
   const pagina = r.mode === "navigate" || (u.origin === location.origin && /\/(index\.html)?$/.test(u.pathname));
   if (pagina) {

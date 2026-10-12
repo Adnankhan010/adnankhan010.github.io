@@ -226,6 +226,11 @@ textarea{min-height:80px;resize:vertical}
 #vis .gi{display:block}
 .gvolta{display:block;margin-top:4px;padding:3px 10px;border-radius:999px;border:1.5px solid var(--brand);background:transparent;color:var(--brand);font:700 12px Archivo,sans-serif}.gvolta[hidden]{display:none}
 #vbar{margin:10px 0 0}
+#offb,#attb{position:fixed;left:8px;right:8px;z-index:60;border-radius:12px;padding:11px 14px;font:700 14px Archivo,sans-serif;display:flex;gap:10px;align-items:center;justify-content:center;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#offb{bottom:8px;background:#b26a00;color:#fff}
+#attb{bottom:8px;background:#1f4fa8;color:#fff}
+#offb:not([hidden])~#attb{bottom:64px}
+#attb button{border:0;border-radius:9px;padding:7px 13px;background:#fff;color:#1f4fa8;font:800 14px Archivo,sans-serif;flex:none}
 #vbb{background:var(--brand);color:var(--on)}
 #vbb.fin{background:#1faa59;border-color:#1faa59;color:#fff}
 #vbb.sec{background:transparent;color:var(--brand)}
@@ -366,7 +371,7 @@ textarea{min-height:80px;resize:vertical}
   <div class="seg" id="rlseg" style="display:flex;gap:6px;margin:6px 0"><button id="rld" aria-pressed="false">Dia</button><button id="rls" aria-pressed="true">Semana</button><button id="rlm2" aria-pressed="false">Mês</button></div>
   <div style="display:flex;align-items:center;gap:8px;margin:6px 0"><button id="rla" aria-label="Período anterior">◀</button><b id="rlt" style="flex:1;text-align:center"></b><button id="rln" aria-label="Próximo período">▶</button></div>
   <label style="display:flex;flex-direction:column;font-size:12px;color:var(--mute);gap:3px;margin:6px 0">Vendedor<select id="rlv"></select></label>
-  <div class="acts"><button id="rlg">Atualizar</button><button id="rlj">Gerar imagem</button></div>
+  <div class="acts"><button id="rlg">Atualizar</button><button id="rlj">Gerar imagem</button><button id="rlp">Lista de produção</button></div>
   <p class="msg" id="rlm" style="margin:6px 0"></p>
   <div id="rlc"></div>
 </div></div>
@@ -377,10 +382,12 @@ textarea{min-height:80px;resize:vertical}
   <p class="msg" id="sdm" style="margin:6px 2px 0"></p>
 </div></div>
 <div id="toast" hidden role="status"></div>
+<div id="offb" role="status" hidden>Sem conexão · o pedido fica salvo no celular e sobe quando o sinal voltar</div>
+<div id="attb" role="status" hidden><span>Nova versão disponível</span><button id="attok">Atualizar</button></div>
 <div class="ov" id="ov"><div class="box">
   <img id="prev" alt="Prévia do pedido em JPG">
   <p id="msg" class="msg">Segure a imagem para salvar ou compartilhar.</p>
-  <div class="acts"><button id="shr" hidden>Enviar no WhatsApp</button><button id="sav">Salvar JPG</button><button id="svp" hidden>Salvar PDF</button><button id="tc">Tela cheia</button><button id="fch">Fechar</button></div>
+  <div class="acts"><button id="shr" hidden>Enviar no WhatsApp</button><button id="cpl">Copiar legenda</button><button id="sav">Salvar JPG</button><button id="svp" hidden>Salvar PDF</button><button id="tc">Tela cheia</button><button id="fch">Fechar</button></div>
 </div></div>
 <div class="ov" id="hs"><div class="box">
   <div class="hhead"><b id="htit">Histórico</b><button id="hfx">Fechar</button></div>
@@ -1133,8 +1140,8 @@ async function rlBusca(forca){
     rl.dados=rl.cache[key]={a,b,es:out,t:Date.now()};m.textContent="";rlRender()}
   catch(e){m.textContent="Não foi possível carregar o relatório. Confira a internet e toque em Atualizar."}}
 const rlOk=e=>e.status!=="rascunho";
-function rlCalc(){const D=rl.dados;if(!D)return null;
-  const es=D.es.filter(e=>!rl.uid||e.uid===rl.uid),P={},T={};
+function rlCalc(todos){const D=rl.dados;if(!D)return null;
+  const es=D.es.filter(e=>todos||!rl.uid||e.uid===rl.uid),P={},T={};
   const ped=es.filter(e=>rlOk(e)&&soma(e.pedido)>0),tro=es.filter(e=>rlOk(e)&&soma(e.troca)>0);
   es.filter(rlOk).forEach(e=>ITENS.forEach(n=>{if(e.pedido[n]>0)P[n]=(P[n]||0)+e.pedido[n];if(e.troca[n]>0)T[n]=(T[n]||0)+e.troca[n]}));
   return {es,P,T,ped,tro,vis:es.filter(e=>e.visita&&e.visita.ini),rasc:es.filter(e=>!rlOk(e)&&(soma(e.pedido)>0||soma(e.troca)>0)),un:soma(P),tr:soma(T)}}
@@ -1157,6 +1164,51 @@ function rlRender(){const C=$("rlc"),R=rlCalc();$("rlt").textContent=rlRot();if(
   const ns=ITENS.filter(n=>R.P[n]>0||R.T[n]>0);
   h+="<h3>Total por produto</h3>"+(ns.length?"<table class='tx'><tr><th>Produto</th><th class='n'>Pedido</th><th class='n'>Troca</th></tr>"+ns.map(n=>"<tr><td>"+esc(n)+"</td><td class='n'>"+(R.P[n]||"")+"</td><td class='n'>"+(R.T[n]||"")+"</td></tr>").join("")+"<tr class='tot'><td>Total</td><td class='n'>"+R.un+"</td><td class='n'>"+R.tr+"</td></tr></table>":"<p class='msg'>Nenhum item.</p>");
   C.innerHTML=h}
+function folhaProducao(logo,o,rot,info){
+  const W=900,P=32,RH=54,tw=W-2*P,T=300;
+  const ns=ITENS.filter(n=>o[n]>0),nr=Math.max(ns.length,1),th=nr*RH;
+  const H=T+56+th+170;
+  const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  x.fillStyle="#fff";x.fillRect(0,0,W,H);
+  cabecalho(x,W,P,logo,"PRODUÇÃO",[],rot);
+  const cq=120,cc=190,cp=tw-cq-cc;
+  x.fillStyle=AZ;rr(x,P,T,tw,56,14);x.fill();
+  x.fillStyle="#fff";x.font="800 22px "+FT;x.textAlign="center";
+  x.fillText("UNID.",P+cq/2,T+37);x.fillText("PRODUTO",P+cq+cp/2,T+37);x.fillText("CAIXAS",P+cq+cp+cc/2,T+37);
+  ns.forEach((n,i)=>{const y=T+56+i*RH;x.fillStyle=i%2?"#f1f5fc":"#fff";x.fillRect(P,y,tw,RH);
+    x.fillStyle=TX;x.textAlign="center";x.font="800 32px "+FT;x.fillText(String(o[n]),P+cq/2,y+38);
+    x.textAlign="left";x.font="800 25px "+FT;let nm=n;while(x.measureText(nm).width>cp-30&&nm.length>4)nm=nm.slice(0,-1);
+    x.fillText(nm,P+cq+16,y+37);
+    const k=CX[n];let t="—";
+    if(k){const q=Math.floor(o[n]/k),rs=o[n]%k;t=(q?q+(q===1?" cx":" cx"):"")+(q&&rs?" + ":"")+(rs?rs+" un":"");if(!t)t="0"}
+    x.textAlign="center";x.font="800 23px "+FT;x.fillStyle=k?AZ:"#8a96ad";x.fillText(t,P+cq+cp+cc/2,y+37)});
+  if(!ns.length){x.fillStyle="#8a96ad";x.textAlign="left";x.font="600 24px "+FT;x.fillText("Nenhum pedido no período",P+cq+16,T+94)}
+  x.strokeStyle=AZ;x.lineWidth=3;x.strokeRect(P,T+56,tw,th);
+  x.lineWidth=2;x.beginPath();x.moveTo(P+cq,T+56);x.lineTo(P+cq,T+56+th);x.moveTo(P+cq+cp,T+56);x.lineTo(P+cq+cp,T+56+th);
+  for(let i=1;i<nr;i++){x.moveTo(P,T+56+i*RH);x.lineTo(P+tw,T+56+i*RH)}x.stroke();
+  const tot=soma(o),yb=T+56+th+46;
+  x.fillStyle=AZ;x.textAlign="right";x.font="800 26px "+FT;
+  x.fillText(ns.length+(ns.length===1?" item · ":" itens · ")+tot+(tot===1?" unidade":" unidades"),W-P,yb);
+  x.textAlign="left";x.fillStyle="#5b6b8c";x.font="600 20px "+FT;
+  x.fillText(info,P,yb);
+  x.fillText("Soma dos pedidos de toda a equipe. Rascunhos não entram.",P,yb+32);
+  return c;
+}
+$("rlp").onclick=async()=>{const R=rlCalc(true);
+  if(!R){$("rlm").textContent="Toque em Atualizar primeiro.";return}
+  if(!R.ped.length){$("rlm").textContent="Nenhum pedido no período.";return}
+  const b=$("rlp");b.textContent="Gerando...";
+  try{await document.fonts.load("800 28px Archivo")}catch(e){}
+  try{const logo=await carregaImg(LOGO);
+    const vds=new Set(R.ped.map(e=>e.uid)).size,lojas=new Set(R.ped.map(e=>(e.cliente||"").trim())).size;
+    const info=R.ped.length+(R.ped.length===1?" pedido · ":" pedidos · ")+vds+(vds===1?" vendedor · ":" vendedores · ")+lojas+(lojas===1?" loja":" lojas");
+    const c=folhaProducao(logo,R.P,rlRot(),info);
+    const jb=await new Promise(z=>c.toBlob(z,"image/jpeg",0.92));
+    const arq="lista-producao-"+rlRange()[0]+".jpg";
+    ultimo={blob:jb,nome:arq,pdf:pdfDeJpeg(new Uint8Array(await jb.arrayBuffer()),c.width,c.height,595,Math.round(595*c.height/c.width)),nomePdf:arq.replace(/\.jpg$/,".pdf"),url:c.toDataURL("image/jpeg",0.92)};
+    $("rlm").textContent="";abrirPrev("Lista de produção pronta. Salve o PDF para imprimir ou envie no WhatsApp.")}
+  catch(e){$("rlm").textContent="Não foi possível gerar a lista."}
+  b.textContent="Lista de produção"};
 function rlAbrir(){if(!ehSup())return;if(!rl.dia)rl.dia=sup.dia||hojeISO();
   const sel=$("rlv");sel.innerHTML="<option value=''>Todos os vendedores</option>"+Object.keys(sup.vend).sort((a,b)=>nomeV(a).localeCompare(nomeV(b),"pt-BR")).map(u=>"<option value='"+esc(u)+"'>"+esc(nomeV(u))+"</option>").join("");sel.value=rl.uid;
   $("rl").classList.add("on");rlBusca(false)}
@@ -1820,10 +1872,18 @@ async function gerar(b,rot,m){
   b.textContent=rot;return true;
 }
 function podeCompart(){try{return !!(ultimo&&ultimo.blob&&navigator.canShare&&navigator.canShare({files:[new File([ultimo.blob],ultimo.nome,{type:"image/jpeg"})]}))}catch(e){return false}}
-$("shr").onclick=async()=>{try{const fs=[new File([ultimo.blob],ultimo.nome,{type:"image/jpeg"})];if(ultimo.pdf)fs.push(new File([ultimo.pdf],ultimo.nomePdf||ultimo.nome.replace(/\.jpg$/,".pdf"),{type:"application/pdf"}));
-  const ok=navigator.canShare&&navigator.canShare({files:fs})?fs:fs.slice(0,1);await navigator.share({files:ok,title:ultimo.nome,text:ultimo.nome.replace(/\.jpg$/,"").replace(/-\d{4}-\d{2}-\d{2}$/,"")})}catch(e){if(e&&e.name!=="AbortError")msg("Não foi possível compartilhar. Use Salvar JPG e envie pelo WhatsApp.")}};
-$("vwpp").onclick=()=>{if(!$("cliente").value.trim()){$("cliente").focus();window.scrollTo(0,0);flash($("vwpp"),"Enviar no WhatsApp","Informe o cliente");return}
-  salvar();window.open("https://wa.me/?text="+encodeURIComponent(textoChecklist()),"_blank")};
+const legendaArq=()=>(ultimo&&ultimo.nome?ultimo.nome:"").replace(/\.jpg$/,"").replace(/-\d{4}-\d{2}-\d{2}$/,"");
+$("shr").onclick=async()=>{
+  try{await navigator.clipboard.writeText(legendaArq())}catch(e){}
+  try{const fs=[new File([ultimo.blob],ultimo.nome,{type:"image/jpeg"})];if(ultimo.pdf)fs.push(new File([ultimo.pdf],ultimo.nomePdf||ultimo.nome.replace(/\.jpg$/,".pdf"),{type:"application/pdf"}));
+  const ok=navigator.canShare&&navigator.canShare({files:fs})?fs:fs.slice(0,1);await navigator.share({files:ok,title:ultimo.nome})}catch(e){if(e&&e.name!=="AbortError")msg("Não foi possível compartilhar. Use Salvar JPG e envie pelo WhatsApp.")}};
+$("cpl").onclick=async()=>{const b=$("cpl");try{await navigator.clipboard.writeText(legendaArq());flash(b,"Copiar legenda","Legenda copiada")}catch(e){flash(b,"Copiar legenda","Não deu para copiar")}};
+$("vwpp").onclick=async()=>{if(!$("cliente").value.trim()){$("cliente").focus();window.scrollTo(0,0);flash($("vwpp"),"Enviar no WhatsApp","Informe o cliente");return}
+  salvar();const t=textoChecklist();
+  if(navigator.share){try{await navigator.share({text:t});return}catch(e){if(e&&e.name==="AbortError")return}}
+  try{await navigator.clipboard.writeText(t)}catch(e){}
+  const w=window.open("https://wa.me/?text="+encodeURIComponent(t),"_blank");
+  if(!w)location.href="https://wa.me/?text="+encodeURIComponent(t)};
 function abrirPrev(t){$("shr").hidden=!podeCompart();$("svp").hidden=!ultimo.pdf;$("prev").src=ultimo.url;msg(t);$("ov").classList.add("on")}
 function rotGf(m){const n=Object.values(state[m]).filter(v=>v>0).length;return (m==="troca"?"Troca":"Pedido")+" · "+(n?n+(n===1?" item":" itens"):"vazio")}
 $("garq").onclick=()=>{$("gp").textContent=rotGf("pedido");$("gt").textContent=rotGf("troca");$("dup").textContent="Pedido + Troca · folha A4";$("gf").classList.add("on")};
@@ -1947,7 +2007,35 @@ function guardaTela(){if(!perfil)return;try{localStorage.setItem("mpv:tela",tela
 document.addEventListener("visibilitychange",guardaTela);window.addEventListener("pagehide",guardaTela);setInterval(guardaTela,2000);
 setTimeout(()=>{let t="";try{t=localStorage.getItem("mpv:tela")||""}catch(e){}
   if(t==="ag")$("abtn").click();else if(t==="hs")$("hbtn").click()},400);
-if("serviceWorker" in navigator&&location.protocol==="https:"&&!/claude\.ai|claudeusercontent/.test(location.host))navigator.serviceWorker.register("sw.js").catch(()=>{});
+/* sem internet */
+function pintaOff(){const e=$("offb");if(e)e.hidden=navigator.onLine!==false}
+window.addEventListener("online",()=>{pintaOff();try{agendaNuvem()}catch(e){}});
+window.addEventListener("offline",pintaOff);pintaOff();
+/* nova versão */
+const VER="32";
+let swReg=null,pediuAtt=false,recarregando=false;
+function mostraAtt(w){const e=$("attb");if(!e||e.dataset.on==="1")return;e.dataset.on="1";e.hidden=false;
+  $("attok").onclick=()=>{$("attok").textContent="Atualizando…";pediuAtt=true;
+    const al=(swReg&&swReg.waiting)||w;if(al){try{al.postMessage({tipo:"atualizar"})}catch(err){}}
+    setTimeout(()=>{if(!recarregando){recarregando=true;location.reload()}},al?1200:300)}}
+if("serviceWorker" in navigator&&(location.protocol==="https:"||/^(localhost|127\.0\.0\.1)$/.test(location.hostname))&&!/claude\.ai|claudeusercontent/.test(location.host)){
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(pediuAtt&&!recarregando){recarregando=true;location.reload()}});
+  navigator.serviceWorker.register("sw.js").then(reg=>{
+    if(reg.waiting&&navigator.serviceWorker.controller)mostraAtt(reg.waiting);
+    reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;
+      w.addEventListener("statechange",()=>{if(w.state==="installed"&&navigator.serviceWorker.controller)mostraAtt(reg.waiting||w)})});
+    swReg=reg;
+  }).catch(()=>{});
+}
+async function checaVersao(){
+  if(!navigator.onLine)return;
+  try{const r=await fetch("versao.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;
+    const v=(await r.text()).trim();
+    if(v&&v!==VER)mostraAtt(swReg&&swReg.waiting||null)}catch(e){}
+  try{if(swReg)swReg.update()}catch(e){}}
+setInterval(checaVersao,15*60*1000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)checaVersao()});
+setTimeout(checaVersao,4000);
 </script>
 </body>
 </html>
