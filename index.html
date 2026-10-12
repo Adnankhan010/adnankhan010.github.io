@@ -7,7 +7,8 @@
 <meta name="theme-color" content="#1f4fa8">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-maskable-512.png">
+<link rel="preload" as="image" href="logo-app.webp">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap">
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
@@ -17,14 +18,20 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 :root[data-theme="dark"]{--bg:#0f1626;--card:#172038;--ink:#e8eefc;--mute:#9fb0d3;--line:#2b3a5f;--brand:#6f9bf0;--on:#0f1626;--hit:#1f2d52}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.35 Archivo,system-ui,sans-serif;padding-bottom:84px}
+#intro{position:fixed;inset:0;z-index:100;background:#f3f6fb;display:flex;align-items:center;justify-content:center;transition:opacity .25s ease}
+#intro img{width:176px;height:176px;border-radius:40px;box-shadow:0 10px 30px rgba(15,22,38,.25)}
+#intro.fim{opacity:0;pointer-events:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #intro{background:#0f1626}}
+:root[data-theme="dark"] #intro{background:#0f1626}
+:root[data-theme="light"] #intro{background:#f3f6fb}
 header{background:var(--brand);color:var(--on);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 header{padding-left:max(16px,calc((100vw - 640px)/2 + 12px));padding-right:max(16px,calc((100vw - 640px)/2 + 12px))}
 header h1{margin:0;line-height:0}
 header .hl{display:flex;align-items:center;gap:12px;min-width:0}
 header .hi{min-width:0}
-#hlogo{display:block;height:46px;width:auto;background:#fff;border-radius:10px;padding:4px 8px;box-sizing:content-box}
+#hlogo{display:block;height:48px;width:48px;border-radius:12px;object-fit:cover}
 header .hb{display:flex;gap:8px}
-@media (max-width:520px){header{flex-wrap:wrap;row-gap:10px}#hlogo{height:38px}header .hl{gap:10px;flex:1 1 100%}header .hb{flex:1 1 100%}header .hb button{flex:1;padding-left:6px!important;padding-right:6px!important}}
+@media (max-width:520px){header{flex-wrap:wrap;row-gap:10px}#hlogo{height:42px;width:42px}header .hl{gap:10px;flex:1 1 100%}header .hb{flex:1 1 100%}header .hb button{flex:1;padding-left:6px!important;padding-right:6px!important}}
 header p{margin:2px 0 0;font-size:13px;opacity:.85}
 .tabs{max-width:640px;margin:0 auto;display:flex;gap:6px;padding:10px 12px 0;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:2}
 .tabs button{flex:1;min-width:0;padding:12px 2px;border:2px solid var(--brand);background:transparent;color:var(--brand);font:800 15px Archivo,system-ui,sans-serif;border-radius:10px}
@@ -267,6 +274,8 @@ textarea{min-height:80px;resize:vertical}
 </style>
 </head>
 <body>
+<div id="intro" aria-hidden="true"><img src="logo-app.webp" alt=""></div>
+<script>setTimeout(function(){var e=document.getElementById("intro");if(e){e.classList.add("fim");setTimeout(function(){e.remove()},300)}},500)</script>
 <header><div class="hl"><h1><img id="hlogo" alt="Max Pães"></h1><div class="hi"><p id="vnd" class="vnd"></p><p id="count">Pedido · 0 itens</p></div></div><div class="hb"><button id="sbtn" hidden>Painel</button><button id="abtn">Agenda</button><button id="hbtn">Histórico</button></div></header>
 <div class="tabs" role="tablist">
   <button role="tab" id="t-pedido" aria-selected="true">Pedido</button>
@@ -449,7 +458,7 @@ const dBR=d=>d?d.split("-").reverse().join("/"):"";
 const $=id=>document.getElementById(id);
 const hojeISO=()=>{const t=new Date();return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0")};
 $("data").value=hojeISO();
-$("hlogo").src=LOGO;
+$("hlogo").src="logo-app.webp";
 const U=t=>String(t??"").toUpperCase();
 ["cliente","endereco","comprador","vctt","vexp","vvp","vopv","agn","agb"].forEach(id=>$(id).addEventListener("input",e=>{const el=e.target,u=el.value.toUpperCase();if(u!==el.value){const p=el.selectionStart;el.value=u;try{el.setSelectionRange(p,p)}catch(_){}}},true));
 
