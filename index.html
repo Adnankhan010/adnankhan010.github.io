@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#1f4fa8">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-maskable-512.png">
+<link rel="apple-touch-icon" href="icon-512.png">
 <link rel="preload" as="image" href="logo-app.webp">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap">
 <style>
@@ -2027,7 +2027,7 @@ function pintaOff(){pintaBarras()}
 window.addEventListener("online",()=>{pintaOff();try{agendaNuvem()}catch(e){}});
 window.addEventListener("offline",pintaOff);pintaOff();
 /* nova versão */
-const VER="36";
+const VER="37";
 let swReg=null,pediuAtt=false,recarregando=false;
 function mostraAtt(w){const e=$("attb");if(!e||e.dataset.on==="1")return;e.dataset.on="1";pintaBarras();
   $("attok").onclick=()=>{$("attok").textContent="Atualizando…";pediuAtt=true;
