@@ -329,13 +329,14 @@ textarea{min-height:80px;resize:vertical}
   <p class="msg" id="spm" style="margin:0 2px 10px"></p>
   <div class="kp" id="spk"></div>
   <div class="sh">Vendedores</div><div class="vg" id="spv"></div>
-  <details class="gv" id="sgv"><summary>Gerenciar acessos dos vendedores</summary>
-    <div class="gvf"><b>Novo vendedor</b>
+  <details class="gv" id="sgv"><summary>Gerenciar acessos</summary>
+    <div class="gvf"><b>Novo acesso</b>
+      <label>Perfil<select id="nvp"><option value="vendedor">Vendedor</option><option value="supervisor">Supervisor</option></select></label>
       <label>Nome<input id="nvn" autocapitalize="characters"></label>
       <label>E-mail<input id="nve" type="email" inputmode="email" autocomplete="off"></label>
       <label>Senha inicial (mín. 6)<input id="nvs" type="text" autocomplete="off"></label>
       <button id="nvb">Criar acesso</button><p class="msg" id="nvm" style="margin:6px 0 0"></p>
-      <p class="msg" style="margin:4px 0 0">Passe o e-mail e a senha inicial ao vendedor. No primeiro acesso, o app pede para ele criar a senha dele.</p></div>
+      <p class="msg" style="margin:4px 0 0">Passe o e-mail e a senha inicial à pessoa. No primeiro acesso, o app pede para ela criar a senha dela. Só a conta do dono cria acessos.</p></div>
     <div class="tl" id="sgl"></div>
   </details>
   <div class="sh" id="spl">Visitas e pedidos</div><div class="tl" id="spt2"></div>
@@ -1056,14 +1057,14 @@ function supRender(){if(!$("sp").classList.contains("on"))return;supGerencia();
     const rows=Object.entries(lj).filter(([,v])=>v.p||v.t).sort((a,b)=>(b[1].t/(b[1].p||1))-(a[1].t/(a[1].p||1)));
     $("spts").innerHTML="<tr><th>Loja</th><th class='n'>Pedido</th><th class='n'>Troca</th><th class='n'>%</th></tr>"+(rows.length?rows.map(([k,v])=>{const pc=v.p?Math.round(v.t/v.p*100):null;return "<tr class='"+(pc===null||pc>10?"alto":"")+"'><td>"+esc(k)+"</td><td class='n'>"+v.p+"</td><td class='n'>"+v.t+"</td><td class='n'>"+(pc===null?"—":pc+"%")+"</td></tr>"}).join(""):"<tr><td colspan='4' class='vazio'>Sem dados na semana.</td></tr>")}
 }
-function supGerencia(){const L=$("sgl");if(!L)return;L.innerHTML="";const me=fbAuth&&fbAuth.currentUser?fbAuth.currentUser.uid:"";
+function supGerencia(){const L=$("sgl");if(!L)return;L.innerHTML="";const me=fbAuth&&fbAuth.currentUser?fbAuth.currentUser.uid:"";const dono=me===DONO_UID;$("sgv").hidden=!dono;if(!dono)return;
   Object.keys(sup.vend).sort((a,b)=>nomeV(a).localeCompare(nomeV(b),"pt-BR")).forEach(uid=>{const v=sup.vend[uid]||{};const r=document.createElement("div");r.className="gr";
     r.innerHTML="<span class='gn'><b>"+esc(nomeV(uid))+"</b>"+(v.papel==="supervisor"?" · supervisor":"")+"<small>"+esc(v.email||"")+(v.trocarSenha?" · aguardando 1º acesso":"")+(v.ativo===false?" · <span class='off'>desativado</span>":"")+"</small></span>";
     const rs=document.createElement("button");rs.className="sec";rs.textContent="Redefinir senha";
     rs.onclick=async()=>{if(!v.email)return;if(rs.dataset.c!=="1"){rs.dataset.c="1";rs.textContent="Enviar e-mail?";setTimeout(()=>{rs.dataset.c="";rs.textContent="Redefinir senha"},3000);return}
       try{await fbAuth.sendPasswordResetEmail(v.email);rs.textContent="E-mail enviado"}catch(e){rs.textContent="Falhou"}};
     r.appendChild(rs);
-    if(uid!==me&&v.papel!=="supervisor"){const at=document.createElement("button");at.className="sec";at.textContent=v.ativo===false?"Reativar":"Desativar";
+    if(uid!==me){const at=document.createElement("button");at.className="sec";at.textContent=v.ativo===false?"Reativar":"Desativar";
       at.onclick=async()=>{if(at.dataset.c!=="1"){at.dataset.c="1";at.textContent="Confirmar?";setTimeout(()=>{at.dataset.c="";at.textContent=v.ativo===false?"Reativar":"Desativar"},3000);return}
         try{await fbDb.collection("vendedores").doc(uid).set({ativo:v.ativo===false},{merge:true})}catch(e){at.textContent="Falhou"}};r.appendChild(at)}
     L.appendChild(r)})}
@@ -1073,8 +1074,8 @@ $("nvb").onclick=async()=>{const b=$("nvb"),m=$("nvm"),nome=U($("nvn").value).tr
   b.disabled=true;b.textContent="Criando…";
   try{if(!appCad)appCad=firebase.initializeApp(FIREBASE_CONFIG,"cadastro");const a2=appCad.auth();try{await a2.setPersistence(firebase.auth.Auth.Persistence.NONE)}catch(_){}
     const cr=await a2.createUserWithEmailAndPassword(em,se);const uid=cr.user.uid;await a2.signOut();
-    await fbDb.collection("vendedores").doc(uid).set({nome,email:em,papel:"vendedor",ativo:true,trocarSenha:true,criadoEm:Date.now(),criadoPor:fbAuth.currentUser.uid});
-    m.textContent="Acesso criado para "+nome+". Passe a ele: "+em+" e a senha inicial.";$("nvn").value="";$("nve").value="";$("nvs").value=""}
+    await fbDb.collection("vendedores").doc(uid).set({nome,email:em,papel:($("nvp").value==="supervisor"?"supervisor":"vendedor"),ativo:true,trocarSenha:true,criadoEm:Date.now(),criadoPor:fbAuth.currentUser.uid});
+    m.textContent="Acesso criado para "+nome+". Passe a ela: "+em+" e a senha inicial.";$("nvn").value="";$("nve").value="";$("nvs").value=""}
   catch(e){m.textContent=e&&e.code==="auth/email-already-in-use"?"Esse e-mail já tem conta.":erroTxt(e)}
   finally{b.disabled=false;b.textContent="Criar acesso"}};
 $("nvn").addEventListener("input",e=>{const el=e.target,u=el.value.toUpperCase();if(u!==el.value)el.value=u});
