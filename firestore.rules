@@ -12,7 +12,11 @@ service cloud.firestore {
     // Perfil de cada usuário: só o dono (conta do Wesley) cria e altera acessos
     match /vendedores/{uid} {
       allow read: if logado() && (request.auth.uid == uid || supervisor());
-      allow create: if dono();
+      // O dono cria acessos; quem entra sem perfil só consegue registrar um pedido (inativo)
+      allow create: if dono() || (logado() && request.auth.uid == uid
+                      && request.resource.data.ativo == false
+                      && request.resource.data.pendente == true
+                      && request.resource.data.papel == 'vendedor');
       // Cada um atualiza o próprio perfil (ex.: troca de senha), mas não muda papel nem ativo
       allow update: if dono() || (logado() && request.auth.uid == uid
                       && request.resource.data.papel == resource.data.papel
