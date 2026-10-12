@@ -1210,7 +1210,7 @@ $("spav").onclick=async()=>{try{const r=await Notification.requestPermission();$
 setInterval(()=>{if($("sp").classList.contains("on"))supRender()},60000);
 function supDesliga(){if(sup.uv){sup.uv();sup.uv=null}Object.values(sup.lst).forEach(f=>f());sup.lst={};sup.docs={};sup.vend={};sup.ini="";$("sp").classList.remove("on");$("sbtn").hidden=true}
 function supPronto(){const s=ehSup();$("sbtn").hidden=!s;if(!s){$("sp").classList.remove("on");return}
-  $("spav").hidden=!(window.Notification&&Notification.permission==="default");supAbrir()}
+  $("spav").hidden=!(window.Notification&&Notification.permission==="default");if(perfil.papel==="supervisor")supAbrir()}
 async function iniciaNuvem(){
   if(!FIREBASE_CONFIG){const n=lsG("mpv:nome");if(n){perfil={nome:n};mostraVendedor()}else mostraLogin("local");
     stNuvem("Modo sem nuvem: os dados ficam só neste celular. Faça backup com frequência.");return}
