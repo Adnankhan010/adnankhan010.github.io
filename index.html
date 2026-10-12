@@ -1273,7 +1273,7 @@ $("spav").onclick=async()=>{try{const r=await Notification.requestPermission();$
 setInterval(()=>{if($("sp").classList.contains("on"))supRender()},60000);
 function supDesliga(){if(sup.uv){sup.uv();sup.uv=null}Object.values(sup.lst).forEach(f=>f());sup.lst={};sup.docs={};sup.vend={};sup.ini="";$("sp").classList.remove("on");$("sbtn").hidden=true}
 function supPronto(){const s=ehSup();$("sbtn").hidden=!s;if(!s){$("sp").classList.remove("on");return}
-  $("spav").hidden=!(window.Notification&&Notification.permission==="default");{let t="";try{t=localStorage.getItem("mpv:tela")||""}catch(e){}if(perfil.papel==="supervisor"||t==="sp")supAbrir()}}
+  $("spav").hidden=!(window.Notification&&Notification.permission==="default");if(perfil.papel==="supervisor"||telaSalva()==="sp")supAbrir()}
 async function iniciaNuvem(){
   if(!FIREBASE_CONFIG){const n=lsG("mpv:nome");if(n){perfil={nome:n};mostraVendedor()}else mostraLogin("local");
     stNuvem("Modo sem nuvem: os dados ficam só neste celular. Faça backup com frequência.");return}
@@ -2013,9 +2013,10 @@ window.addEventListener("popstate",()=>{
   const el=$("toast");el.textContent="Toque em voltar novamente para sair";el.hidden=false;clearTimeout(el._t);el._t=setTimeout(()=>el.hidden=true,2000)});
 armaVoltar();
 /* guarda a tela aberta para reabrir como estava */
-function guardaTela(){if(!perfil)return;try{localStorage.setItem("mpv:tela",telaAtual())}catch(e){}}
+function guardaTela(){if(!perfil)return;try{localStorage.setItem("mpv:tela",hojeISO()+"|"+telaAtual())}catch(e){}}
+function telaSalva(){try{const v=(localStorage.getItem("mpv:tela")||"").split("|");return v[0]===hojeISO()?(v[1]||""):""}catch(e){return ""}}
 document.addEventListener("visibilitychange",guardaTela);window.addEventListener("pagehide",guardaTela);setInterval(guardaTela,2000);
-setTimeout(()=>{let t="";try{t=localStorage.getItem("mpv:tela")||""}catch(e){}
+setTimeout(()=>{const t=telaSalva();
   if(t==="ag")$("abtn").click();else if(t==="hs")$("hbtn").click()},400);
 /* sem internet */
 const assinando=()=>{const e=$("sg");return !!e&&e.classList.contains("on")};
@@ -2026,7 +2027,7 @@ function pintaOff(){pintaBarras()}
 window.addEventListener("online",()=>{pintaOff();try{agendaNuvem()}catch(e){}});
 window.addEventListener("offline",pintaOff);pintaOff();
 /* nova versão */
-const VER="35";
+const VER="36";
 let swReg=null,pediuAtt=false,recarregando=false;
 function mostraAtt(w){const e=$("attb");if(!e||e.dataset.on==="1")return;e.dataset.on="1";pintaBarras();
   $("attok").onclick=()=>{$("attok").textContent="Atualizando…";pediuAtt=true;
