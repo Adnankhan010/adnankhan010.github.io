@@ -134,6 +134,7 @@ header .vnd:empty{display:none}
 .gr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:9px 4px;border-top:1px solid var(--line)}
 .gr .gn{flex:1 1 180px}.gr .gn small{display:block;color:var(--mute)}
 .gr button.sec{background:transparent;color:var(--brand)}
+.gr select.sec{border:1.5px solid var(--brand);background:transparent;color:var(--brand);border-radius:9px;padding:9px 8px;font:800 14px Archivo,sans-serif}
 .gr .off{color:#b3261e;font-weight:700}
 .hst{display:inline-block;font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:1px;border:1.5px solid currentColor}
 .hst.faturar{color:#0b7a75}.hst.fechado{color:#1a8f4c}.hst.alterado{color:#b26a00}.hst.rascunho{color:var(--mute)}
@@ -981,10 +982,10 @@ function aplicaTema(){let t="auto";try{t=localStorage.getItem("mpv:tema")||"auto
 $("tema").onclick=()=>{let t="auto";try{t=localStorage.getItem("mpv:tema")||"auto"}catch(e){}
   const n=t==="auto"?"claro":t==="claro"?"escuro":"auto";try{localStorage.setItem("mpv:tema",n)}catch(e){}aplicaTema()};
 aplicaTema();
-function aplicaAcesso(){const dono=lsG("mpv:dono")===DONO_UID;$("t-gondola").style.display=dono?"":"none";
+function aplicaAcesso(){const dono=!!(perfil&&perfil.papel==="developer");$("t-gondola").style.display=dono?"":"none";
   ["t-motorista","bkp","rst","csv"].forEach(i=>{const el=$(i);if(el)el.style.display="none"});
   const sp=!!(perfil&&(perfil.papel==="supervisor"||perfil.papel==="developer"));$("rsb").style.display=sp?"":"none";
-  const vz=!!(perfil&&(perfil.papel==="promotor"||perfil.papel==="developer"));$("t-visita").style.display=vz?"":"none";
+  const vz=!!(perfil&&(perfil.papel==="promotor"||perfil.papel==="developer"));$("vbar").style.display=vz?"":"none";$("t-visita").style.display=vz?"":"none";
   if((mode==="gondola"&&!dono)||mode==="motorista"||(mode==="visita"&&!vz&&perfil)){mode="pedido";render()}}
 const rotP=p=>p==="developer"?"Developer":p==="supervisor"?"Supervisor":p==="promotor"?"Promotor":"Vendedor";
 function mostraVendedor(){aplicaAcesso();$("vnd").textContent=perfil&&perfil.nome?rotP(perfil.papel)+": "+perfil.nome:"";$("sair").hidden=!fbAuth;$("msen").hidden=!(fbAuth&&perfil)}
@@ -1072,7 +1073,7 @@ function supRender(){if(!$("sp").classList.contains("on"))return;supGerencia();
     const b=document.createElement("button");b.className="vc";b.setAttribute("aria-pressed",sup.filtro===uid);
     const st=ab?"● Em visita · "+ab.cliente+" desde "+ab.ini:ult?"Última atividade hoje às "+hhDe(ult):v.ultimoAcesso?"Último acesso "+new Date(v.ultimoAcesso).toLocaleDateString("pt-BR")+" "+hhDe(v.ultimoAcesso):"Ainda não usou o app";
     const pu=mine.reduce((a,x)=>a+(x.ped||0),0),tu=mine.reduce((a,x)=>a+(x.tro||0),0);
-    b.innerHTML="<b>"+esc(nomeV(uid))+(v.papel==="supervisor"||v.papel==="developer"?" · "+rotP(v.papel).toLowerCase():"")+"</b><span class='vs"+(ab?" on":"")+"'>"+esc(st)+"</span><span class='vn'><span><b>"+mine.filter(x=>x.ini).length+"</b> visitas</span><span><b>"+mine.filter(x=>x.status!=="rascunho").length+"</b> fechados</span><span><b>"+pu+"</b> un.</span><span><b>"+tu+"</b> troca</span></span>";
+    b.innerHTML="<b>"+esc(nomeV(uid))+(v.papel&&v.papel!=="vendedor"?" · "+rotP(v.papel).toLowerCase():"")+"</b><span class='vs"+(ab?" on":"")+"'>"+esc(st)+"</span><span class='vn'><span><b>"+mine.filter(x=>x.ini).length+"</b> visitas</span><span><b>"+mine.filter(x=>x.status!=="rascunho").length+"</b> fechados</span><span><b>"+pu+"</b> un.</span><span><b>"+tu+"</b> troca</span></span>";
     b.onclick=()=>{sup.filtro=sup.filtro===uid?"":uid;supRender()};V.appendChild(b)});
   $("spl").textContent="Visitas e pedidos"+(sup.filtro?" · "+nomeV(sup.filtro)+" (toque no card de novo para ver todos)":"");
   const T=$("spt2");T.innerHTML="";
@@ -1090,11 +1091,13 @@ function supRender(){if(!$("sp").classList.contains("on"))return;supGerencia();
 }
 function supGerencia(){const L=$("sgl");if(!L)return;L.innerHTML="";const me=fbAuth&&fbAuth.currentUser?fbAuth.currentUser.uid:"";const dono=me===DONO_UID;$("sgv").hidden=!dono;if(!dono)return;
   Object.keys(sup.vend).sort((a,b)=>nomeV(a).localeCompare(nomeV(b),"pt-BR")).forEach(uid=>{const v=sup.vend[uid]||{};const r=document.createElement("div");r.className="gr";
-    r.innerHTML="<span class='gn'><b>"+esc(nomeV(uid))+"</b>"+(v.papel==="supervisor"||v.papel==="developer"?" · "+rotP(v.papel).toLowerCase():"")+"<small>"+esc(v.email||"")+(v.trocarSenha?" · aguardando 1º acesso":"")+(v.ativo===false?" · <span class='off'>desativado</span>":"")+"</small></span>";
+    r.innerHTML="<span class='gn'><b>"+esc(nomeV(uid))+"</b>"+(v.papel&&v.papel!=="vendedor"?" · "+rotP(v.papel).toLowerCase():"")+"<small>"+esc(v.email||"")+(v.trocarSenha?" · aguardando 1º acesso":"")+(v.ativo===false?" · <span class='off'>desativado</span>":"")+"</small></span>";
     const rs=document.createElement("button");rs.className="sec";rs.textContent="Redefinir senha";
     rs.onclick=async()=>{if(!v.email)return;if(rs.dataset.c!=="1"){rs.dataset.c="1";rs.textContent="Enviar e-mail?";setTimeout(()=>{rs.dataset.c="";rs.textContent="Redefinir senha"},3000);return}
       try{await fbAuth.sendPasswordResetEmail(v.email);rs.textContent="E-mail enviado"}catch(e){rs.textContent="Falhou"}};
     r.appendChild(rs);
+    if(uid!==me){const pf=document.createElement("select");pf.className="sec";pf.setAttribute("aria-label","Perfil");[["vendedor","Vendedor"],["promotor","Promotor"],["supervisor","Supervisor"]].forEach(([k,t])=>{const o=document.createElement("option");o.value=k;o.textContent=t;pf.appendChild(o)});pf.value=["promotor","supervisor"].includes(v.papel)?v.papel:"vendedor";
+      pf.onchange=async()=>{try{await fbDb.collection("vendedores").doc(uid).set({papel:pf.value},{merge:true})}catch(e){pf.value=v.papel||"vendedor"}};r.appendChild(pf)}
     if(uid!==me){const at=document.createElement("button");at.className="sec";at.textContent=v.ativo===false?"Reativar":"Desativar";
       at.onclick=async()=>{if(at.dataset.c!=="1"){at.dataset.c="1";at.textContent="Confirmar?";setTimeout(()=>{at.dataset.c="";at.textContent=v.ativo===false?"Reativar":"Desativar"},3000);return}
         try{await fbDb.collection("vendedores").doc(uid).set({ativo:v.ativo===false},{merge:true})}catch(e){at.textContent="Falhou"}};r.appendChild(at)}
