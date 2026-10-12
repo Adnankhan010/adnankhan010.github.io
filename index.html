@@ -957,7 +957,8 @@ aplicaTema();
 function aplicaAcesso(){const dono=lsG("mpv:dono")===DONO_UID;$("t-gondola").style.display=dono?"":"none";
   ["t-motorista","bkp","rst","csv"].forEach(i=>{const el=$(i);if(el)el.style.display="none"});
   if((mode==="gondola"&&!dono)||mode==="motorista"){mode="pedido";render()}}
-function mostraVendedor(){aplicaAcesso();$("vnd").textContent=perfil&&perfil.nome?(perfil.papel==="supervisor"?"Supervisor: ":"Vendedor: ")+perfil.nome:"";$("sair").hidden=!fbAuth;$("msen").hidden=!(fbAuth&&perfil)}
+const rotP=p=>p==="developer"?"Developer":p==="supervisor"?"Supervisor":"Vendedor";
+function mostraVendedor(){aplicaAcesso();$("vnd").textContent=perfil&&perfil.nome?rotP(perfil.papel)+": "+perfil.nome:"";$("sair").hidden=!fbAuth;$("msen").hidden=!(fbAuth&&perfil)}
 function lgMsg(t,ok){const m=$("lgm");m.textContent=t||"";m.classList.toggle("ok",!!ok)}
 function lgModoSet(m){lgModo=m;const loc=m==="local",nova=m==="nova",mud=m==="mudar",ent=m==="entrar";
   $("lgnl").hidden=!loc;$("lgel").hidden=!ent;$("lgsl").hidden=!(ent||mud);$("lgsll").textContent=mud?"Senha atual":"Senha";
@@ -1002,7 +1003,7 @@ const semDe=iso=>{const t=new Date(iso+"T12:00:00");return addD(iso,-((t.getDay(
 const hhDe=ms=>ms?new Date(ms).toTimeString().slice(0,5):"";
 const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const STN={faturar:"Pronto para faturar",fechado:"Fechado",alterado:"Alterado",rascunho:"Rascunho"};
-function ehSup(){return !!(perfil&&perfil.papel==="supervisor"&&fbDb)}
+function ehSup(){return !!(perfil&&(perfil.papel==="supervisor"||perfil.papel==="developer")&&fbDb)}
 function supAbrir(){if(!ehSup())return;if(!sup.dia)sup.dia=hojeISO();$("sp").classList.add("on");supLiga();supRender()}
 function supLiga(){
   if(!sup.uv)sup.uv=fbDb.collection("vendedores").onSnapshot(sn=>{sn.docs.forEach(d=>{sup.vend[d.id]=d.data()||{}});supDocs();supRender()},e=>{$("spm").textContent="Sem permissão para ver os vendedores. Confira se sua conta está marcada como supervisor no Firebase."});
@@ -1042,7 +1043,7 @@ function supRender(){if(!$("sp").classList.contains("on"))return;supGerencia();
     const b=document.createElement("button");b.className="vc";b.setAttribute("aria-pressed",sup.filtro===uid);
     const st=ab?"● Em visita · "+ab.cliente+" desde "+ab.ini:ult?"Última atividade hoje às "+hhDe(ult):v.ultimoAcesso?"Último acesso "+new Date(v.ultimoAcesso).toLocaleDateString("pt-BR")+" "+hhDe(v.ultimoAcesso):"Ainda não usou o app";
     const pu=mine.reduce((a,x)=>a+(x.ped||0),0),tu=mine.reduce((a,x)=>a+(x.tro||0),0);
-    b.innerHTML="<b>"+esc(nomeV(uid))+(v.papel==="supervisor"?" · supervisor":"")+"</b><span class='vs"+(ab?" on":"")+"'>"+esc(st)+"</span><span class='vn'><span><b>"+mine.filter(x=>x.ini).length+"</b> visitas</span><span><b>"+mine.filter(x=>x.status!=="rascunho").length+"</b> fechados</span><span><b>"+pu+"</b> un.</span><span><b>"+tu+"</b> troca</span></span>";
+    b.innerHTML="<b>"+esc(nomeV(uid))+(v.papel==="supervisor"||v.papel==="developer"?" · "+rotP(v.papel).toLowerCase():"")+"</b><span class='vs"+(ab?" on":"")+"'>"+esc(st)+"</span><span class='vn'><span><b>"+mine.filter(x=>x.ini).length+"</b> visitas</span><span><b>"+mine.filter(x=>x.status!=="rascunho").length+"</b> fechados</span><span><b>"+pu+"</b> un.</span><span><b>"+tu+"</b> troca</span></span>";
     b.onclick=()=>{sup.filtro=sup.filtro===uid?"":uid;supRender()};V.appendChild(b)});
   $("spl").textContent="Visitas e pedidos"+(sup.filtro?" · "+nomeV(sup.filtro)+" (toque no card de novo para ver todos)":"");
   const T=$("spt2");T.innerHTML="";
@@ -1060,7 +1061,7 @@ function supRender(){if(!$("sp").classList.contains("on"))return;supGerencia();
 }
 function supGerencia(){const L=$("sgl");if(!L)return;L.innerHTML="";const me=fbAuth&&fbAuth.currentUser?fbAuth.currentUser.uid:"";const dono=me===DONO_UID;$("sgv").hidden=!dono;if(!dono)return;
   Object.keys(sup.vend).sort((a,b)=>nomeV(a).localeCompare(nomeV(b),"pt-BR")).forEach(uid=>{const v=sup.vend[uid]||{};const r=document.createElement("div");r.className="gr";
-    r.innerHTML="<span class='gn'><b>"+esc(nomeV(uid))+"</b>"+(v.papel==="supervisor"?" · supervisor":"")+"<small>"+esc(v.email||"")+(v.trocarSenha?" · aguardando 1º acesso":"")+(v.ativo===false?" · <span class='off'>desativado</span>":"")+"</small></span>";
+    r.innerHTML="<span class='gn'><b>"+esc(nomeV(uid))+"</b>"+(v.papel==="supervisor"||v.papel==="developer"?" · "+rotP(v.papel).toLowerCase():"")+"<small>"+esc(v.email||"")+(v.trocarSenha?" · aguardando 1º acesso":"")+(v.ativo===false?" · <span class='off'>desativado</span>":"")+"</small></span>";
     const rs=document.createElement("button");rs.className="sec";rs.textContent="Redefinir senha";
     rs.onclick=async()=>{if(!v.email)return;if(rs.dataset.c!=="1"){rs.dataset.c="1";rs.textContent="Enviar e-mail?";setTimeout(()=>{rs.dataset.c="";rs.textContent="Redefinir senha"},3000);return}
       try{await fbAuth.sendPasswordResetEmail(v.email);rs.textContent="E-mail enviado"}catch(e){rs.textContent="Falhou"}};
@@ -1136,7 +1137,7 @@ async function entrou(u){
   const barra=t=>{perfil=null;mostraVendedor();fbAuth.signOut().catch(()=>{});setTimeout(()=>{mostraLogin("entrar");lgMsg(t)},300)};
   if(!ps){barra("Sem internet para conferir seu acesso. Conecte e tente de novo.");return}
   var errB="";
-  if(!ps.exists&&u.uid===DONO_UID){try{await pref.set({nome:"WESLEY FALCÃO",email:u.email||"",papel:"supervisor",ativo:true,criadoEm:Date.now()});ps=await pref.get()}catch(e){errB=" ("+(e.code||e.message)+")"}}
+  if(!ps.exists&&u.uid===DONO_UID){try{await pref.set({nome:"WESLEY FALCÃO",email:u.email||"",papel:"developer",ativo:true,criadoEm:Date.now()});ps=await pref.get()}catch(e){errB=" ("+(e.code||e.message)+")"}}
   if(!ps.exists){barra("Seu acesso ainda não foi liberado."+errB+" ["+u.uid+"]");return}
   perfil={...ps.data()};if(!perfil.nome)perfil.nome=U((u.email||"").split("@")[0]);
   if(perfil.ativo===false){barra("Seu acesso está desativado.");return}
