@@ -1821,7 +1821,7 @@ async function gerar(b,rot,m){
 }
 function podeCompart(){try{return !!(ultimo&&ultimo.blob&&navigator.canShare&&navigator.canShare({files:[new File([ultimo.blob],ultimo.nome,{type:"image/jpeg"})]}))}catch(e){return false}}
 $("shr").onclick=async()=>{try{const fs=[new File([ultimo.blob],ultimo.nome,{type:"image/jpeg"})];if(ultimo.pdf)fs.push(new File([ultimo.pdf],ultimo.nomePdf||ultimo.nome.replace(/\.jpg$/,".pdf"),{type:"application/pdf"}));
-  const ok=navigator.canShare&&navigator.canShare({files:fs})?fs:fs.slice(0,1);await navigator.share({files:ok,title:ultimo.nome})}catch(e){if(e&&e.name!=="AbortError")msg("Não foi possível compartilhar. Use Salvar JPG e envie pelo WhatsApp.")}};
+  const ok=navigator.canShare&&navigator.canShare({files:fs})?fs:fs.slice(0,1);await navigator.share({files:ok,title:ultimo.nome,text:ultimo.nome.replace(/\.jpg$/,"").replace(/-\d{4}-\d{2}-\d{2}$/,"")})}catch(e){if(e&&e.name!=="AbortError")msg("Não foi possível compartilhar. Use Salvar JPG e envie pelo WhatsApp.")}};
 $("vwpp").onclick=()=>{if(!$("cliente").value.trim()){$("cliente").focus();window.scrollTo(0,0);flash($("vwpp"),"Enviar no WhatsApp","Informe o cliente");return}
   salvar();window.open("https://wa.me/?text="+encodeURIComponent(textoChecklist()),"_blank")};
 function abrirPrev(t){$("shr").hidden=!podeCompart();$("svp").hidden=!ultimo.pdf;$("prev").src=ultimo.url;msg(t);$("ov").classList.add("on")}
